@@ -35,6 +35,7 @@ uint8_t GetMyParent(uint8_t nodeid)
             break;
        case 8:
             parent = 6;
+	    break;
        case 23:
        case 24:
        case 25:
@@ -139,7 +140,7 @@ void printRoutePath(hw3_msg *btrpkt)
 		sprintf(temp, "%d ", node_in_path);
 		strcat(route_string, temp);
     }
-    dbg("BASE", " MILIND: PACKET SRC: %d DEST %d HOPS: %d ROUTE: %s\n", btrpkt->route[0],btrpkt->route[btrpkt->num_hops - 1], btrpkt->num_hops - 1 , route_string);
+    dbg("BASE", " MILIND: PACKET SRC: %d ID: %d DEST %d HOPS: %d ROUTE: %s\n", btrpkt->route[0],btrpkt->counter,btrpkt->route[btrpkt->num_hops - 1], btrpkt->num_hops - 1 , route_string);
 
 }
 
@@ -369,6 +370,11 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
     event message_t* RadioReceive.receive(message_t* msg, void* payload, uint8_t len)
     {
         uint32_t localTime;
+//MILIND_TEST
+	 message_t* msg1;
+ 	hw3_msg * btrpkt1;
+	int i = 0;
+//MILIND_TEST
     	if (len == sizeof(hw3_msg))
     	{
         	hw3_msg* btrpkt = (hw3_msg*)payload;
@@ -407,7 +413,69 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                     //Adjust source and destination of the packet for next hop
                     call RadioAMPacket.setDestination(msg, my_parent);
                     call RadioAMPacket.setSource(msg, TOS_NODE_ID);
-		    msg = QueueIt(msg, payload, len);
+
+switch(qos_attack)
+{
+	case QOS_NORMAL:
+		// Normal case , dont do anything
+		msg = QueueIt(msg, payload, len);
+		break;
+	case QOS_DROP:
+		// Drop message
+		msg = QueueIt(msg, payload, len);
+		break;
+	case QOS_DELAY:
+		// Add a timer to delay message?
+		msg = QueueIt(msg, payload, len);
+		break;
+	case QOS_INJECT:
+		// send an additional message
+		msg = QueueIt(msg, payload, len);
+		//MILIND_TEST start injection
+	atomic 
+            if (!radioFull)
+            {
+                msg1 = radioQueue[radioIn];
+                btrpkt1 = (hw3_msg*) (call RadioPacket.getPayload(msg1, sizeof (hw3_msg)));
+                if (btrpkt1 == NULL)
+                {
+                    dbg ("ERR", "payload is smaller than length!\n");
+                    exit(-1);
+                }
+		btrpkt1->groupid = btrpkt->groupid;
+		btrpkt1->time = btrpkt->time;
+                btrpkt1->nodeid = btrpkt->nodeid;
+                btrpkt1->counter = btrpkt->counter;
+                btrpkt1->destid = btrpkt->destid;
+		btrpkt1->num_hops = btrpkt->num_hops;
+                for (i = 0; i < 5; i++) 
+				{
+                    btrpkt1->route[i] = btrpkt->route[i]; 
+                }
+                call RadioPacket.setPayloadLength(msg1, sizeof (hw3_msg));
+                call RadioAMPacket.setDestination(msg1, my_parent);
+                call RadioAMPacket.setSource(msg1, TOS_NODE_ID);
+
+                 ++radioIn;
+                 if(radioIn >=RADIO_QUEUE_LEN)
+                     radioIn=0;
+                 if(radioIn == radioOut)
+                    radioFull = TRUE;
+                 if (!radioBusy)
+                 {
+                     post RadioSendTask();
+                     radioBusy = TRUE;
+                 }
+            }
+            else
+            {
+                DropBlink("Timer Fired Function");
+            }
+	//MILIND_TEST end injection
+		break;
+} // end switch
+		    
+
                 }
             }
             else   //not destined for me, drop it!
