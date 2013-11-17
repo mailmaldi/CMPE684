@@ -119,7 +119,49 @@ int QOS_Attack(int myID)
     return qos_attack;
 }
 
-// MILIND: function to print path of a packet
+// MILIND: some custom functions
+
+uint8_t getEncodedTOSID(uint8_t nodeid, int qos_attack)
+{
+	uint8_t retId = nodeid;	
+	switch(qos_attack)
+	{
+		case 0:
+			break;
+		case 1:
+			retId = (nodeid | 64 );
+			break;
+		case 2:
+			retId = (nodeid | 128 );
+			break;
+		case 3:
+			retId = (nodeid | 192 );
+			break;
+	}
+	return retId;
+}
+
+uint8_t getDecodedTOSID(uint8_t nodeid)
+{
+	uint8_t retId = (nodeid & 63);	
+	return retId;
+}
+
+int getQosFromTOSID(uint8_t nodeid)
+{
+	int qos = 0;
+	int temp = (nodeid & 192);
+	switch(temp)
+	{
+		case 0: qos = 0;break;
+		case 64: qos = 1;break;
+		case 128: qos = 2;break;
+		case 192: qos = 3;break;
+	}
+	return qos;
+}
+
+//function to print path of a packet
 void printRoutePath(hw3_msg *btrpkt) 
 {
 
@@ -135,14 +177,16 @@ void printRoutePath(hw3_msg *btrpkt)
     for (i = 0; i < num_hops; i++) 
 	{
 		memset(temp,'\0', 6); // 1 byte for \0 and 4 since 0 to 255 and one for space
-        node_in_path = btrpkt->route[i];
+        node_in_path = getDecodedTOSID(btrpkt->route[i]);
 		
 		sprintf(temp, "%d ", node_in_path);
 		strcat(route_string, temp);
     }
-    dbg("BASE", " MILIND: PACKET SRC: %d ID: %d DEST %d HOPS: %d ROUTE: %s\n", btrpkt->route[0],btrpkt->counter,btrpkt->route[btrpkt->num_hops - 1], btrpkt->num_hops - 1 , route_string);
+    dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s]\n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string);
 
 }
+
+// MILIND end
 
 module HW3C {
     uses interface Boot;
@@ -200,6 +244,7 @@ task void RadioSendTask();
     call Leds.led0Toggle();
     dbg("LED", "SendBlink to: %u\n",dest);
   }
+
 
 message_t* QueueIt(message_t *msg, void *payload, uint8_t len) 
 {
@@ -325,7 +370,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 				{
                     btrpkt->route[i] = 255; // set path to initial value
                 }
-				btrpkt->route[0] = TOS_NODE_ID;
+				btrpkt->route[0] = getEncodedTOSID(TOS_NODE_ID, qos_attack);
 				btrpkt->num_hops = btrpkt->num_hops + 1;
 				// MILIND: end modification of additional data struct before setting time
 
@@ -404,7 +449,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                 else
                 {
 					// MILIND: modify packet to record route, etc.
-					btrpkt->route[btrpkt->num_hops] = TOS_NODE_ID;
+					btrpkt->route[btrpkt->num_hops] = getEncodedTOSID(TOS_NODE_ID,qos_attack);
 					btrpkt->num_hops += 1;
 					// MILIND: end modification of packet
 
