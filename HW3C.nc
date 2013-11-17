@@ -119,7 +119,8 @@ int QOS_Attack(int myID)
 }
 
 // MILIND: function to print path of a packet
-void printRoutePath(hw3_msg *btrpkt) {
+void printRoutePath(hw3_msg *btrpkt) 
+{
 
     int i = 0; // for loop
 	int num_hops = btrpkt->num_hops; 
@@ -138,7 +139,7 @@ void printRoutePath(hw3_msg *btrpkt) {
 		sprintf(temp, "%d ", node_in_path);
 		strcat(route_string, temp);
     }
-        dbg("BASE", "PACKET ROUTE: %s\n", route_string);
+    dbg("BASE", "PACKET ROUTE: %s\n", route_string);
 
 }
 
@@ -294,12 +295,12 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 //********* 
 
     event void Timer0.fired() {
-		dbg ("DBG","MILIND: Entered Timer0.fired \n");
         message_t* msg;
         hw3_msg * btrpkt;
 		int i = 0; // MILIND: counter for loop later
         counter ++;
         //call Leds.set(counter);
+		dbg ("DBG","MILIND: Entered Timer0.fired \n");
 
         if (TOS_NODE_ID != BASESTATION_ID)
         {
