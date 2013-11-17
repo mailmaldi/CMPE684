@@ -125,21 +125,20 @@ void printRoutePath(hw3_msg *btrpkt) {
 	int num_hops = btrpkt->num_hops; 
     int node_in_path = 0;
     char route_string[32]; // entire string of route path
-    char idstr[6]; // temporary to convert node_in_path to string
+    char temp[6]; // temporary to convert node_in_path to string
 
-    memset(str,'\0',32); // 6 bytes * 5 hops
+    memset(route_string,'\0',32); // 6 bytes * 5 hops
    
 
     for (i = 0; i < num_hops; i++) 
 	{
-		memset(idstr,'\0', 6); // 1 byte for \0 and 4 since -128 to +127 and one for space
+		memset(temp,'\0', 6); // 1 byte for \0 and 4 since -128 to +127 and one for space
         node_in_path = btrpkt->route[0];
 		
-		sprintf(idstr, "%d ", nodeid);
-		strcat(str, idstr);
-        } 
+		sprintf(temp, "%d ", node_in_path);
+		strcat(route_string, temp);
     }
-        dbg("BASE", "NORMAL ROUTE: %s\n", str);
+        dbg("BASE", "PACKET ROUTE: %s\n", route_string);
 
 }
 
