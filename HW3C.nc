@@ -139,7 +139,7 @@ void printRoutePath(hw3_msg *btrpkt)
 		sprintf(temp, "%d ", node_in_path);
 		strcat(route_string, temp);
     }
-    dbg("BASE", "PACKET ROUTE: %s\n", route_string);
+    dbg("BASE", " MILIND: PACKET HOPS: %d ROUTE: %s\n", btrpkt->num_hops , route_string);
 
 }
 
