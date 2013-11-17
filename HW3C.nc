@@ -147,7 +147,6 @@ module HW3C {
     uses interface Boot;
     uses interface Leds;
     uses interface Timer<TMilli> as Timer0;
-    uses interface Timer<TMilli> as Timer1;
     uses interface LocalTime<TMilli>;
     uses interface SplitControl as RadioControl;
     uses interface Packet as RadioPacket;       //to create a packet
