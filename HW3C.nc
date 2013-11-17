@@ -390,7 +390,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                     dbg("DBG", "BS received a packet, statistics==> num_messages: %d, total_delay:%d, total_delay: %d\n",num_messages, total_delay, total_delay);
 					
 					// MILIND: Print route of packet
-					btrpkt->pktroute[btrpkt->num_hops] = BASESTATION_ID;
+					btrpkt->route[btrpkt->num_hops] = BASESTATION_ID;
                     btrpkt->num_hops += 1;
 					printRoutePath(btrpkt);
 					// MILIND: End printing route of packet
@@ -398,7 +398,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                 else
                 {
 					// MILIND: modify packet to record route, etc.
-					btrpkt->pktroute[btrpkt->num_hops] = TOS_NODE_ID;
+					btrpkt->route[btrpkt->num_hops] = TOS_NODE_ID;
 					btrpkt->num_hops += 1;
 					// MILIND: end modification of packet
 
