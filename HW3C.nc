@@ -139,7 +139,7 @@ void printRoutePath(hw3_msg *btrpkt)
 		sprintf(temp, "%d ", node_in_path);
 		strcat(route_string, temp);
     }
-    dbg("BASE", " MILIND: PACKET HOPS: %d ROUTE: %s\n", btrpkt->num_hops - 1 , route_string);
+    dbg("BASE", " MILIND: PACKET SRC: %d DEST %d HOPS: %d ROUTE: %s\n", btrpkt->route[0],btrpkt->route[btrpkt->num_hops - 1], btrpkt->num_hops - 1 , route_string);
 
 }
 
@@ -147,6 +147,7 @@ module HW3C {
     uses interface Boot;
     uses interface Leds;
     uses interface Timer<TMilli> as Timer0;
+    uses interface Timer<TMilli> as Timer1;
     uses interface LocalTime<TMilli>;
     uses interface SplitControl as RadioControl;
     uses interface Packet as RadioPacket;       //to create a packet
@@ -407,7 +408,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                     //Adjust source and destination of the packet for next hop
                     call RadioAMPacket.setDestination(msg, my_parent);
                     call RadioAMPacket.setSource(msg, TOS_NODE_ID);
-			        msg = QueueIt(msg, payload, len);
+		    msg = QueueIt(msg, payload, len);
                 }
             }
             else   //not destined for me, drop it!

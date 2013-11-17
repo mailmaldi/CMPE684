@@ -25,4 +25,11 @@ typedef nx_struct hw3_msg {
 
 } hw3_msg;
 
+enum {
+    QOS_NORMAL = 0,//node acts normal
+    QOS_DROP = 1,
+    QOS_DELAY = 2,
+    QOS_INJECT = 3
+};
+
 #endif /* HW3_H */
