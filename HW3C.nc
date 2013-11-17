@@ -429,14 +429,14 @@ switch(qos_attack)
 		msg = QueueIt(msg, payload, len);
 		break;
 	case QOS_INJECT:
-		// send an additional message
+			// send an additional message
 		msg = QueueIt(msg, payload, len);
 		//MILIND_TEST start injection
 	atomic 
             if (!radioFull)
             {
-                msg1 = radioQueue[radioIn];
-                btrpkt1 = (hw3_msg*) (call RadioPacket.getPayload(msg1, sizeof (hw3_msg)));
+		
+                btrpkt1 = (hw3_msg*) (call RadioPacket.getPayload(msg, sizeof (hw3_msg)));
                 if (btrpkt1 == NULL)
                 {
                     dbg ("ERR", "payload is smaller than length!\n");
@@ -452,11 +452,15 @@ switch(qos_attack)
 				{
                     btrpkt1->route[i] = btrpkt->route[i]; 
                 }
-                call RadioPacket.setPayloadLength(msg1, sizeof (hw3_msg));
-                call RadioAMPacket.setDestination(msg1, my_parent);
-                call RadioAMPacket.setSource(msg1, TOS_NODE_ID);
+                call RadioPacket.setPayloadLength(msg, sizeof (hw3_msg));
+                call RadioAMPacket.setDestination(msg, my_parent);
+                call RadioAMPacket.setSource(msg, TOS_NODE_ID);
 
-                 ++radioIn;
+                msg1 = radioQueue[radioIn];
+		radioQueue[radioIn] = msg;
+		msg = msg1;
+
+		 radioIn = (radioIn + 1) % RADIO_QUEUE_LEN;
                  if(radioIn >=RADIO_QUEUE_LEN)
                      radioIn=0;
                  if(radioIn == radioOut)
@@ -466,10 +470,6 @@ switch(qos_attack)
                      post RadioSendTask();
                      radioBusy = TRUE;
                  }
-            }
-            else
-            {
-                DropBlink("Timer Fired Function");
             }
 	//MILIND_TEST end injection
 		break;
