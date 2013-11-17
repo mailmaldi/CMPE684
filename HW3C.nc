@@ -133,7 +133,7 @@ void printRoutePath(hw3_msg *btrpkt)
 
     for (i = 0; i < num_hops; i++) 
 	{
-		memset(temp,'\0', 6); // 1 byte for \0 and 4 since -128 to +127 and one for space
+		memset(temp,'\0', 6); // 1 byte for \0 and 4 since 0 to 255 and one for space
         node_in_path = btrpkt->route[i];
 		
 		sprintf(temp, "%d ", node_in_path);
@@ -322,7 +322,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 				btrpkt->num_hops = 0;
                 for (i = 0; i < 5; i++) 
 				{
-                    btrpkt->route[i] = -1; // set path to initial value
+                    btrpkt->route[i] = 255; // set path to initial value
                 }
 				btrpkt->route[0] = TOS_NODE_ID;
 				btrpkt->num_hops = btrpkt->num_hops + 1;
