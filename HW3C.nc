@@ -118,6 +118,30 @@ int QOS_Attack(int myID)
     return qos_attack;
 }
 
+// MILIND: function to print path of a packet
+void printRoutePath(hw3_msg *btrpkt) {
+
+    int i = 0; // for loop
+	int num_hops = btrpkt->num_hops; 
+    int node_in_path = 0;
+    char route_string[32]; // entire string of route path
+    char idstr[6]; // temporary to convert node_in_path to string
+
+    memset(str,'\0',32); // 6 bytes * 5 hops
+   
+
+    for (i = 0; i < num_hops; i++) 
+	{
+		memset(idstr,'\0', 6); // 1 byte for \0 and 4 since -128 to +127 and one for space
+        node_in_path = btrpkt->route[0];
+		
+		sprintf(idstr, "%d ", nodeid);
+		strcat(str, idstr);
+        } 
+    }
+        dbg("BASE", "NORMAL ROUTE: %s\n", str);
+
+}
 
 module HW3C {
     uses interface Boot;
@@ -143,9 +167,9 @@ implementation {
     uint8_t qos_attack;
     
     /*to handle message buffer */
-    enum {    
-    RADIO_QUEUE_LEN = 12,
-  };
+    enum {
+        RADIO_QUEUE_LEN = 12,
+    };
   
   message_t  radioQueueBufs[RADIO_QUEUE_LEN];
   message_t  * ONE_NOK radioQueue[RADIO_QUEUE_LEN];
@@ -170,6 +194,7 @@ task void RadioSendTask();
     call Leds.led1Toggle();
     dbg("LED", "FailBlink\n");
   }
+
  void SendBlink(am_addr_t dest) {
     call Leds.led0Toggle();
     dbg("LED", "SendBlink to: %u\n",dest);
@@ -239,6 +264,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
       call RadioControl.start();
         
     }
+
 //********** 
 //Radio Start Done
 //********* 
@@ -257,6 +283,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
             call RadioControl.start();
         }
     }
+
 //********** 
 //Radio Stop Done
 //********* 
@@ -268,8 +295,10 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 //********* 
 
     event void Timer0.fired() {
+		dbg ("DBG","MILIND: Entered Timer0.fired \n");
         message_t* msg;
         hw3_msg * btrpkt;
+		int i = 0; // MILIND: counter for loop later
         counter ++;
         //call Leds.set(counter);
 
@@ -288,6 +317,17 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                 btrpkt->nodeid = TOS_NODE_ID;
                 btrpkt->counter = counter;
                 btrpkt->destid = my_parent;
+
+				// MILIND: initialize with hops as 0 and truncate arrays
+				btrpkt->num_hops = 0;
+                for (i = 0; i < 5; i++) 
+				{
+                    btrpkt->route[i] = -1; // set path to initial value
+                }
+				btrpkt->route[0] = TOS_NODE_ID;
+				btrpkt->num_hops = btrpkt->num_hops + 1;
+				// MILIND: end modification of additional data struct before setting time
+
                 btrpkt->time = call LocalTime.get();
                 //Set packet header data. These info will be adjusted in each hop
                 call RadioPacket.setPayloadLength(msg, sizeof (hw3_msg));
@@ -348,15 +388,26 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 
                     dbg("DBG", "Received a packet. LocalTime: %d, Timestamp of packet: %d, delay:%d\n", localTime, btrpkt->time, delay);
                     dbg("DBG", "BS received a packet, statistics==> num_messages: %d, total_delay:%d, total_delay: %d\n",num_messages, total_delay, total_delay);
+					
+					// MILIND: Print route of packet
+					btrpkt->pktroute[btrpkt->num_hops] = BASESTATION_ID;
+                    btrpkt->num_hops += 1;
+					printRoutePath(btrpkt);
+					// MILIND: End printing route of packet
                 }
                 else
                 {
+					// MILIND: modify packet to record route, etc.
+					btrpkt->pktroute[btrpkt->num_hops] = TOS_NODE_ID;
+					btrpkt->num_hops += 1;
+					// MILIND: end modification of packet
+
                     //Insert it into buffer to be relayed forward
                     dbg("FWD", "QUEUE it to be relayed to %d\n",my_parent);
                     //Adjust source and destination of the packet for next hop
                     call RadioAMPacket.setDestination(msg, my_parent);
                     call RadioAMPacket.setSource(msg, TOS_NODE_ID);
-			        QueueIt(msg, payload, len);
+			        msg = QueueIt(msg, payload, len);
                 }
             }
             else   //not destined for me, drop it!
