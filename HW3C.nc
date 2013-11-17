@@ -134,7 +134,7 @@ void printRoutePath(hw3_msg *btrpkt)
     for (i = 0; i < num_hops; i++) 
 	{
 		memset(temp,'\0', 6); // 1 byte for \0 and 4 since -128 to +127 and one for space
-        node_in_path = btrpkt->route[0];
+        node_in_path = btrpkt->route[i];
 		
 		sprintf(temp, "%d ", node_in_path);
 		strcat(route_string, temp);
