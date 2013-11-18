@@ -174,35 +174,71 @@ void printRoutePath(hw3_msg *btrpkt)
     bool to_print = 1;
     char delay_string[200];
     char delay_temp[20];
+    bool malicious = 0;
+    char qos_drop[200];
+    char qos_inject[200];
+    char qos_delay[200];
+    char qos_temp[20];
 
     memset(route_string,'\0',32); // 6 bytes * 5 hops
     memset(delay_string,'\0',200);
+    memset(qos_drop,'\0',200);
+    memset(qos_delay,'\0',200);
+    memset(qos_inject,'\0',200);
 
     for (i = 0; i < num_hops; i++) 
     {
 		memset(temp,'\0', 6); // 1 byte for \0 and 4 since 0 to 255 and one for space
 		memset(delay_temp, '\0' , 20) ;
+		memset(qos_temp, '\0' , 20) ;
         	node_in_path = getDecodedTOSID(btrpkt->route[i]);
 		if(getQosFromTOSID(btrpkt->route[i]) ==  QOS_DROP)
 		{
 			to_print = 0;
-			break; // comment if else is to be printed completely for debug
+			//break; // comment if else is to be printed completely for debug
 		}
 		sprintf(temp, "%d ", node_in_path);
 		sprintf(delay_temp, "%d ", btrpkt->delays[i]);
 		strcat(delay_string, delay_temp);
 		strcat(route_string, temp);
+
+		sprintf(qos_temp, "%d ", node_in_path);
+		switch(getQosFromTOSID(btrpkt->route[i]))
+		{
+			case QOS_NORMAL:
+				break;
+			case QOS_DROP:
+				strcat(qos_drop, qos_temp);
+				malicious = 1;
+				break;
+			case QOS_DELAY:
+				strcat(qos_delay, qos_temp);
+				malicious = 1;
+				break;
+			case QOS_INJECT:
+				strcat(qos_inject, qos_temp);
+				malicious = 1;
+				break;
+		}
     }
 
     if(to_print)
     {
-    	dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s] DELAYS: [%s] Create_Time: %d Final_Time: %d \n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string , delay_string,btrpkt->time,btrpkt->prevtime);
+    	dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s] DELAYS: [%s] Create_Time: %d\n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string , delay_string,btrpkt->time,btrpkt->prevtime);
     }
     else
     {
         //dbg("BASE", "MILIND DROPPED PACKET" );
     }
 
+    if(malicious)
+    {
+	dbg("BASE", "MILIND: MALICIOUS NODE DETECTED ON ROUTE: [%s] QOS_DROP:[%s] QOS_DELAY:[%s] QOS_INJECT:[%s] \n",route_string,qos_drop,qos_delay,qos_inject );
+    }
+    else
+    {
+	dbg("BASE", "MILIND: NORMAL NODES DETECTED ON ROUTE: [%s] \n" , route_string);
+    }
 }
 
 // 3- Enhance the report BS prints by adding the packet throughput of the network
