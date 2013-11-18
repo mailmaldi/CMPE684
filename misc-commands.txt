@@ -5,7 +5,13 @@ make micaz sim
 =========
 
 git config --global credential.helper "cache --timeout=36000"
-git push -u origin master
+
 git clone https://github.com/mailmaldi/CMPE684.git
+
 git config --global user.name "Milind Patil"
+
 git config --global user.email mailmaldi@gmail.com
+
+git add <filenames or pattern>
+git commit -m "describe your change"
+git push -u origin master
