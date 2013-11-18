@@ -162,6 +162,21 @@ int getQosFromTOSID(uint8_t nodeid)
 	return qos;
 }
 
+bool qosDropInPath(hw3_msg *btrpkt)
+{
+	bool is_drop = 0;
+	int num_hops = btrpkt->num_hops; 
+        int node_in_path = 0 , i = 0;
+	
+	for (i = 0; i < num_hops; i++) 
+        {
+		if(getQosFromTOSID(btrpkt->route[i]) ==  QOS_DROP)
+		{ is_drop = 1;
+		}
+	}
+	return is_drop;
+}
+
 //function to print path of a packet
 void printRoutePath(hw3_msg *btrpkt) 
 {
@@ -515,17 +530,19 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                 if (TOS_NODE_ID == BASESTATION_ID) 
                 {
 			//MILIND TODO, check message qos & drop, also set delay here in btrpkt, also increment total hops in eternity
-                    num_messages++;
-		    total_num_hops = total_num_hops + btrpkt->num_hops; // only if not dropped
-                    localTime = (uint32_t) call LocalTime.get();
-                    delay = localTime - btrpkt->time; // now delay is no longer counted thus
-		    btrpkt->prevtime = (uint32_t) localtime;
-                    total_delay += delay;
-                    
-		dbg("BASE","MILIND recv packet: localtime:%d time:%d prevtime:%d delay:%d total_delay:%d \n",localtime,btrpkt->time,btrpkt->prevtime,delay,total_delay);
+			localTime = (uint32_t) call LocalTime.get();
+			delay = localTime - btrpkt->time; // now delay is no longer counted thus
+			btrpkt->prevtime = (uint32_t) localtime;			
+			if(!qosDropInPath(btrpkt))
+			{
+		            num_messages++;
+			    total_num_hops = total_num_hops + btrpkt->num_hops; // only if not dropped
+		            total_delay += delay;
+		        }    
+		//dbg("BASE","MILIND recv packet: localtime:%d time:%d prevtime:%d delay:%d total_delay:%d \n",localtime,btrpkt->time,btrpkt->prevtime,delay,total_delay);
 
-                    dbg("DBG", "Received a packet. LocalTime: %d, Timestamp of packet: %d, delay:%d\n", localTime, btrpkt->time, delay);
-                    dbg("DBG", "BS received a packet, statistics==> num_messages: %d, total_delay:%d, total_delay: %d\n",num_messages, total_delay, total_delay);
+                    //dbg("DBG", "Received a packet. LocalTime: %d, Timestamp of packet: %d, delay:%d\n", localTime, btrpkt->time, delay);
+                    //dbg("DBG", "BS received a packet, statistics==> num_messages: %d, total_delay:%d, total_delay: %d\n",num_messages, total_delay, total_delay);
 					
 					// MILIND: Print route of packet
 					btrpkt->route[btrpkt->num_hops] = BASESTATION_ID;
@@ -570,6 +587,7 @@ switch(qos_attack)
 			// send an additional message
 		msg = QueueIt(msg, payload, len);
 		//MILIND_TEST start injection
+	dbg("FWD" , " NODE %d is QOS_INJECT right now, so INJECT PACKET!!!\n" , TOS_NODE_ID);
 	atomic 
             if (!radioFull)
             {
