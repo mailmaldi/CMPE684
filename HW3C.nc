@@ -526,7 +526,7 @@ switch(qos_attack)
 		break;
 	case QOS_DELAY:
 		// Add a timer to delay message?
-		if(btrpkt->prevtime > 125) { btrpkt->prevtime = btrpkt->prevtime - 125; }
+		btrpkt->prevtime = btrpkt->prevtime - 125;
 		msg = QueueIt(msg, payload, len);
 		break;
 	case QOS_INJECT:
