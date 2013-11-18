@@ -196,7 +196,7 @@ void printRoutePath(hw3_msg *btrpkt)
 
     if(to_print)
     {
-    	dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s] DELAYS: [%s]\n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string , delay_string);
+    	dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s] DELAYS: [%s] Create_Time: %d Final_Time: %d \n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string , delay_string,btrpkt->time,btrpkt->prevtime);
     }
     else
     {
@@ -212,18 +212,16 @@ void printRoutePath(hw3_msg *btrpkt)
 // MILIND TODO finish this
 void getPacketThroughput(uint32_t total_num_hops, uint32_t total_delay) {
 
-    uint32_t totalbytes = 0;
-    uint32_t numsecs = 0;
-    uint32_t throughput = 0;
+    uint32_t total_bytes = 0 , time_in_seconds = 0 , packet_throughput = 0;
 
-    totalbytes = total_num_hops * sizeof(message_t); // hw3_msg or message_t ?
-    numsecs = total_delay/1000;
+    total_bytes = total_num_hops * sizeof(message_t); // hw3_msg or message_t ? since message_t is the actual packet between nodes
+    time_in_seconds = total_delay/1000;
 
-    if (numsecs != 0) {
-        throughput = totalbytes/ numsecs;
+    if (time_in_seconds > 0) {
+        packet_throughput = total_bytes/ time_in_seconds;
     }
-	dbg("BASE", "total_num_hops: %d total_delay: %d \n", total_num_hops, total_delay);
-    dbg("BASE", "Network throughput is: %d bytes/second\n", throughput);
+    dbg("BASE", "total_num_hops: %d, total_bytes: %d total_delay: %d  \n", total_num_hops, total_bytes, time_in_seconds);
+    dbg("BASE", "Network throughput is: %d bytes/s\n", packet_throughput);
 
 }
 
@@ -451,7 +449,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
             dbg("BASE", "=========Base Station Statistics============\n");
             dbg("BASE", "Total Received Packages:%d\n", num_messages);
             dbg("BASE", "Avgerage Delivery Delay:%.2f\n", (float)total_delay/(float)num_messages);
-	    dbg("BASE", "total_num_hops:%d total_delay:%d\n", total_num_hops,total_delay);
+	    //dbg("BASE", "total_num_hops:%d total_delay:%d\n", total_num_hops,total_delay);
 	    getPacketThroughput(total_num_hops,total_delay);
             dbg("BASE", "============================================\n\n");
         }
@@ -482,11 +480,12 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 			//MILIND TODO, check message qos & drop, also set delay here in btrpkt, also increment total hops in eternity
                     num_messages++;
 		    total_num_hops = total_num_hops + btrpkt->num_hops; // only if not dropped
-                    localTime = call LocalTime.get();
+                    localTime = (uint32_t) call LocalTime.get();
                     delay = localTime - btrpkt->time; // now delay is no longer counted thus
-		    btrpkt->prevtime = localtime;
+		    btrpkt->prevtime = (uint32_t) localtime;
                     total_delay += delay;
                     
+		dbg("BASE","MILIND recv packet: localtime:%d time:%d prevtime:%d delay:%d total_delay:%d \n",localtime,btrpkt->time,btrpkt->prevtime,delay,total_delay);
 
                     dbg("DBG", "Received a packet. LocalTime: %d, Timestamp of packet: %d, delay:%d\n", localTime, btrpkt->time, delay);
                     dbg("DBG", "BS received a packet, statistics==> num_messages: %d, total_delay:%d, total_delay: %d\n",num_messages, total_delay, total_delay);
@@ -502,9 +501,9 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                 {
 					// MILIND: modify packet to record route, etc.
 					btrpkt->route[btrpkt->num_hops] = getEncodedTOSID(TOS_NODE_ID,qos_attack);
-					localTime = call LocalTime.get();
+					localTime = (uint32_t) call LocalTime.get();
                     			delay = localTime - btrpkt->prevtime;
-					btrpkt->prevtime = localtime;
+					btrpkt->prevtime = (uint32_t) localtime;
 					btrpkt->delays[btrpkt->num_hops] = delay;
 					btrpkt->num_hops += 1;
 					// MILIND: end modification of packet
