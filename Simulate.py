@@ -15,7 +15,7 @@ t.addChannel("PKG", sys.stdout)
 t.addChannel("DROP", sys.stdout)
 t.addChannel("FWD", sys.stdout)
 t.addChannel("BASE", sys.stdout)
-#t.addChannel("DBG", sys.stdout)
+t.addChannel("DBG", sys.stdout)
 t.addChannel("ERR", sys.stdout)
 #t.addChannel("FILE", sys.stdout)
 
