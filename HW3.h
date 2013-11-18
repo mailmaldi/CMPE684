@@ -23,7 +23,8 @@ typedef nx_struct hw3_msg {
 	/* With intelligent programming,we could use bit arrays, etc to compress packet size,
 	   but my first target is to make a properly work-able solution */
 	nx_uint8_t delays[5]; // since route is max 5, delays can be max 4, but not getting into such tiny details
-	nx_uint32_t prevtime; // time
+// this array only stores the delta in time taken between hops
+	nx_uint32_t prevtime; // timestamp at the previous node, this so that we can calculate intermediate delays
 
 } hw3_msg;
 
