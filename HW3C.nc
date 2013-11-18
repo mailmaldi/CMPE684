@@ -172,25 +172,30 @@ void printRoutePath(hw3_msg *btrpkt)
     char route_string[32]; // entire string of route path
     char temp[6]; // temporary to convert node_in_path to string
     bool to_print = 1;
+    char delay_string[200];
+    char delay_temp[20];
 
     memset(route_string,'\0',32); // 6 bytes * 5 hops
-   
+    memset(delay_string,'\0',200);
 
     for (i = 0; i < num_hops; i++) 
     {
 		memset(temp,'\0', 6); // 1 byte for \0 and 4 since 0 to 255 and one for space
+		memset(delay_temp, '\0' , 20) ;
         	node_in_path = getDecodedTOSID(btrpkt->route[i]);
 		if(getQosFromTOSID(btrpkt->route[i]) ==  QOS_DROP)
 		{
 			to_print = 0;
+			break; // comment if else is to be printed completely for debug
 		}
 		sprintf(temp, "%d ", node_in_path);
-		strcat(route_string, temp);
+		sprintf(delay_temp, "%d ", btrpkt->delays[i]);
+		strcat(delay_string, delay_temp);
     }
 
     if(to_print)
     {
-    	dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s]\n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string);
+    	dbg("BASE", " MILIND: PACKET SRC: %d COUNTER: %d DEST: %d HOPS: %d ROUTE: [%s] DELAYS: [%s]\n", getDecodedTOSID(btrpkt->route[0]),btrpkt->counter,getDecodedTOSID(btrpkt->route[btrpkt->num_hops - 1]), btrpkt->num_hops - 1 , route_string , delay_string);
     }
     else
     {
@@ -199,7 +204,7 @@ void printRoutePath(hw3_msg *btrpkt)
 
 }
 
-
+// 3- Enhance the report BS prints by adding the packet throughput of the network
 //http://en.wikipedia.org/wiki/Throughput#Channel_utilization_and_efficiency
 // now what?  average rate of successful message delivery, so might be (every message * hops it took * size)/total time
 // because every message will go like 20-21-10-0 , so thats 3 hops
@@ -210,7 +215,7 @@ void getPacketThroughput(uint64_t total_num_hops, uint64_t total_delay) {
     uint64_t numsecs = 0;
     uint64_t throughput = 0;
 
-    totalbytes = total_num_hops * sizeof(hw3_msg);
+    totalbytes = total_num_hops * sizeof(hw3_msg); // or message_t ?
     numsecs = total_delay/1000;
 
     if (numsecs != 0) {
@@ -243,7 +248,7 @@ implementation {
     uint64_t num_messages = 0;
     uint64_t total_delay = 0;
     uint64_t total_num_hops = 0;
-    uint64_t delay;  
+    uint64_t delay = 0;  
     uint8_t my_parent;
     uint8_t qos_attack;
     
@@ -329,8 +334,11 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
         
         if (TOS_NODE_ID == BASESTATION_ID)
         {       
+	    total_num_hops=0;
             num_messages = 0;
             total_delay = 0;
+	    delay = 0;
+		dbg ("BASE","MILIND: initializing base station at BOOT num_messages=%d total_delay=%"PRIu64"  \n",num_messages,total_delay) ;
         }
         
         my_parent = GetMyParent (TOS_NODE_ID); 
@@ -412,6 +420,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 				// MILIND: end modification of additional data struct before setting time
 
                 btrpkt->time = call LocalTime.get();
+		btrpkt->prevtime = btrpkt->time;
                 //Set packet header data. These info will be adjusted in each hop
                 call RadioPacket.setPayloadLength(msg, sizeof (hw3_msg));
                 call RadioAMPacket.setDestination(msg, my_parent);
@@ -472,9 +481,10 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                 {
 			//MILIND TODO, check message qos & drop, also set delay here in btrpkt, also increment total hops in eternity
                     num_messages++;
-		    total_num_hops = total_num_hops + btrpkt->num_hops;
+		    total_num_hops = total_num_hops + btrpkt->num_hops; // only if not dropped
                     localTime = call LocalTime.get();
-                    delay = localTime - btrpkt->time; // now delay is no longer counted thus
+                    delay = localTime - btrpkt->prevtime; // now delay is no longer counted thus
+		    btrpkt->prevtime = localtime;
                     total_delay += delay;
                     
 
@@ -483,6 +493,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 					
 					// MILIND: Print route of packet
 					btrpkt->route[btrpkt->num_hops] = BASESTATION_ID;
+					btrpkt->delays[btrpkt->num_hops] = delay;
                    		        btrpkt->num_hops += 1;
 					printRoutePath(btrpkt);
 					// MILIND: End printing route of packet
@@ -492,7 +503,9 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 					// MILIND: modify packet to record route, etc.
 					btrpkt->route[btrpkt->num_hops] = getEncodedTOSID(TOS_NODE_ID,qos_attack);
 					localTime = call LocalTime.get();
-                    			delay = localTime - btrpkt->time;
+                    			delay = localTime - btrpkt->prevtime;
+					btrpkt->prevtime = localtime;
+					btrpkt->delays[btrpkt->num_hops] = delay;
 					btrpkt->num_hops += 1;
 					// MILIND: end modification of packet
 
@@ -514,6 +527,7 @@ switch(qos_attack)
 		break;
 	case QOS_DELAY:
 		// Add a timer to delay message?
+		if(btrpkt->prevtime > 125) { btrpkt->prevtime = btrpkt->prevtime - 125; }
 		msg = QueueIt(msg, payload, len);
 		break;
 	case QOS_INJECT:
