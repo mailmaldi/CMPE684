@@ -191,6 +191,7 @@ void printRoutePath(hw3_msg *btrpkt)
 		sprintf(temp, "%d ", node_in_path);
 		sprintf(delay_temp, "%d ", btrpkt->delays[i]);
 		strcat(delay_string, delay_temp);
+		strcat(route_string, temp);
     }
 
     if(to_print)
@@ -209,19 +210,19 @@ void printRoutePath(hw3_msg *btrpkt)
 // now what?  average rate of successful message delivery, so might be (every message * hops it took * size)/total time
 // because every message will go like 20-21-10-0 , so thats 3 hops
 // MILIND TODO finish this
-void getPacketThroughput(uint64_t total_num_hops, uint64_t total_delay) {
+void getPacketThroughput(uint32_t total_num_hops, uint32_t total_delay) {
 
-    uint64_t totalbytes = 0;
-    uint64_t numsecs = 0;
-    uint64_t throughput = 0;
+    uint32_t totalbytes = 0;
+    uint32_t numsecs = 0;
+    uint32_t throughput = 0;
 
-    totalbytes = total_num_hops * sizeof(hw3_msg); // or message_t ?
+    totalbytes = total_num_hops * sizeof(message_t); // hw3_msg or message_t ?
     numsecs = total_delay/1000;
 
     if (numsecs != 0) {
         throughput = totalbytes/ numsecs;
     }
-	dbg("BASE", "total_num_hops: %d total_delay: %"PRIu64"\n", total_num_hops, total_delay);
+	dbg("BASE", "total_num_hops: %d total_delay: %d \n", total_num_hops, total_delay);
     dbg("BASE", "Network throughput is: %d bytes/second\n", throughput);
 
 }
@@ -245,10 +246,9 @@ implementation {
     bool busy = FALSE;
     message_t pkt;
 
-    uint64_t num_messages = 0;
-    uint64_t total_delay = 0;
-    uint64_t total_num_hops = 0;
-    uint64_t delay = 0;  
+    uint32_t num_messages = 0;
+    uint32_t total_delay = 0;
+    uint32_t total_num_hops = 0;
     uint8_t my_parent;
     uint8_t qos_attack;
     
@@ -337,8 +337,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
 	    total_num_hops=0;
             num_messages = 0;
             total_delay = 0;
-	    delay = 0;
-		dbg ("BASE","MILIND: initializing base station at BOOT num_messages=%d total_delay=%"PRIu64"  \n",num_messages,total_delay) ;
+		dbg ("BASE","MILIND: initializing base station at BOOT num_messages=%d total_delay=%d \n",num_messages,total_delay) ;
         }
         
         my_parent = GetMyParent (TOS_NODE_ID); 
@@ -452,7 +451,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
             dbg("BASE", "=========Base Station Statistics============\n");
             dbg("BASE", "Total Received Packages:%d\n", num_messages);
             dbg("BASE", "Avgerage Delivery Delay:%.2f\n", (float)total_delay/(float)num_messages);
-	    dbg("BASE", "total_num_hops:%d total_delay:%"PRIu64 "\n", total_num_hops,total_delay);
+	    dbg("BASE", "total_num_hops:%d total_delay:%d\n", total_num_hops,total_delay);
 	    getPacketThroughput(total_num_hops,total_delay);
             dbg("BASE", "============================================\n\n");
         }
@@ -464,6 +463,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
     {
         uint32_t localTime;
 //MILIND_TEST
+	    uint32_t delay = 0;  
 	 message_t* msg1;
  	hw3_msg * btrpkt1;
 	int i = 0;
@@ -483,7 +483,7 @@ message_t* QueueIt(message_t *msg, void *payload, uint8_t len)
                     num_messages++;
 		    total_num_hops = total_num_hops + btrpkt->num_hops; // only if not dropped
                     localTime = call LocalTime.get();
-                    delay = localTime - btrpkt->prevtime; // now delay is no longer counted thus
+                    delay = localTime - btrpkt->time; // now delay is no longer counted thus
 		    btrpkt->prevtime = localtime;
                     total_delay += delay;
                     
