@@ -202,6 +202,7 @@ void printRoutePath(hw3_msg *btrpkt)
 		strcat(delay_string, delay_temp);
 		strcat(route_string, temp);
 
+		if(i == 0) {continue;}
 		sprintf(qos_temp, "%d ", node_in_path);
 		switch(getQosFromTOSID(btrpkt->route[i]))
 		{
