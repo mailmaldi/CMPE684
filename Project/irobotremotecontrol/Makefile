@@ -1,0 +1,3 @@
+COMPONENT = iRobotRemoteControlApp
+include $(MAKERULES)
+

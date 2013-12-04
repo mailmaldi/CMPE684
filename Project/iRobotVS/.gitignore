@@ -1,0 +1,12 @@
+*.pdb  
+*.exe  
+*.dll  
+debug/*  
+release/*  
+*.user  
+*.suo  
+obj/*  
+bin/*  
+obj  
+bin  
+VSMacros80
