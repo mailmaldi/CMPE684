@@ -1,0 +1,12 @@
+1. use full mode instead? no safety shutdown
+2. start timer only  after serial is initialized , etc
+3. on BS , send all bytes of a command in a single packet & do same at robot? how? uartstream packet instead of byte
+4. cant drive for 1 sec? since have to fire timer, but meanwhile, other items will still be dequeued and more commands sent?
+test by sending move forward , then move right
+5. this entire is shit, 1 packet per opcode, so even if 1 packet lost , everything lost
+
+8901
+2601
+3357
+3884
+413
