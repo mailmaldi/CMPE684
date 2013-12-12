@@ -35,9 +35,10 @@ implementation {
 	uint8_t receivedByte; //from serial port    
 	uint8_t selectedRobot = 1;
 	bool robotSelectMode = FALSE;
-	bool isThisGateway = FALSE;
+	bool isThisGateway = TRUE;
 	uint8_t destinationAddress = 0; //I assume 0 as gateway  --default destination 
 
+	task void SendToRadio();
 	void Fail(uint8_t code);
 	void OK();
 
@@ -75,7 +76,6 @@ implementation {
 
 	event void SerialControl.startDone(error_t error) {
 		if(error == SUCCESS) {
-			uartFull = FALSE;
 			if(call UartStream.enableReceiveInterrupt() != SUCCESS) {
 				Fail(1);
 			}
@@ -159,56 +159,46 @@ implementation {
 	//if we need to handle other packets, we should use snoop receive 
 	event message_t * RadioReceive.receive(message_t * msg, void * payload,
 			uint8_t len) {
-			nx_uint16_t commandid = 0;
-			nx_uint8_t remaining = 0;
-			nx_uint8_t command_length = 0;
+			uint8_t commandid = 0;
 		atomic {
 
 				if(len == sizeof(iRobotMsg)){//this will be correct always since we only have one kind of packets so far
 					iRobotMsg * btrpkt = (iRobotMsg * ) payload;
+					commandid = btrpkt->cmd;
 					
-					if(TOS_NODE_ID == 1) {
-						commandid = btrpkt->cmd;
+					if(TOS_NODE_ID == 1) {						
 						switch(commandid)
 						{
 							case 200:
-								command_length = sizeof(SING_COMMAND) / sizeof(SING_COMMAND[0]);
-								while(call UartStream.send(SING_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(SING_COMMAND,15) != SUCCESS);
 							break;
 							case 201:
-								command_length = sizeof(BLINK_COMMAND) / sizeof(BLINK_COMMAND[0]);
-								while(call UartStream.send(BLINK_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(BLINK_COMMAND,6) != SUCCESS);
 							break;
 							case 202:
-								command_length = sizeof(CLIFF_COMMAND) / sizeof(CLIFF_COMMAND[0]);
-								while(call UartStream.send(CLIFF_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(CLIFF_COMMAND,7) != SUCCESS);
 							break;
 							case 203:
-								command_length = sizeof(FORWARD_COMMAND) / sizeof(FORWARD_COMMAND[0]);
-								while(call UartStream.send(FORWARD_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(FORWARD_COMMAND,7) != SUCCESS);
 							break;
 							case 204:
-								command_length = sizeof(BACK_COMMAND) / sizeof(BACK_COMMAND[0]);
-								while(call UartStream.send(BACK_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(BACK_COMMAND,7) != SUCCESS);
 							break;
 							case 205:
-								command_length = sizeof(LEFT_COMMAND) / sizeof(LEFT_COMMAND[0]);
-								while(call UartStream.send(LEFT_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(LEFT_COMMAND,7) != SUCCESS);
 							break;
 							case 206:
-								command_length = sizeof(RIGHT_COMMAND) / sizeof(RIGHT_COMMAND[0]);
-								while(call UartStream.send(RIGHT_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(RIGHT_COMMAND,7) != SUCCESS);
 							break;
 							case 207:
-								command_length = sizeof(STOP_COMMAND) / sizeof(STOP_COMMAND[0]);
-								while(call UartStream.send(STOP_COMMAND,command_length) != SUCCESS);
+								while(call UartStream.send(STOP_COMMAND,7) != SUCCESS);
 							break;
 							default:
 							break;
 						}
 					}
 					else if (TOS_NODE_ID == 0) {
-						while(call UartStream.send(btrpkt,sizeof(btrpkt)) != SUCCESS);
+						while(call UartStream.send(&commandid,1) != SUCCESS);
 					}
 				}
 		}
