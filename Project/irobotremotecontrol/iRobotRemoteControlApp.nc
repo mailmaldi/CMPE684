@@ -22,6 +22,8 @@ implementation{
   App.RssiRadioReceive -> RssiMsgReceiver.Receive;
   //App.RssiPacket->RssiMsgSender.Packet;
   //App.RssiAMPacket->RssiMsgSender.AMPacket;
+  components  RF230ActiveMessageC;
+  App -> RF230ActiveMessageC.PacketRSSI;
 	
 	App.Boot -> MainC.Boot;
 	App.Leds -> LedsC.Leds;

@@ -22,6 +22,7 @@ module iRobotRemoteControlC {
 		interface Timer<TMilli> as SendTimer;
 		interface AMSend as RssiMsgSend;
 		interface Receive as RssiRadioReceive;
+		interface PacketField<uint8_t> as PacketRSSI;
 
 	}
 }
@@ -50,6 +51,7 @@ implementation {
 	void Fail(uint8_t code);
 	void OK();
 	void Start_Timers();
+	uint16_t getRssi(message_t *msg);
 	
 	event void Boot.booted() {
 		uint8_t i;
@@ -241,9 +243,14 @@ implementation {
 	event message_t * RssiRadioReceive.receive(message_t * msg, void * payload,
 			uint8_t len) {
 			uint8_t commandid = 0;
+			RssiMsg *rssiMsg;
 			
 		atomic {
 		  call Leds.led0Toggle();
+		  
+		  rssiMsg = (RssiMsg*) payload;
+		  rssiMsg->rssi = getRssi(msg);
+		  
 		  if(TOS_NODE_ID == 0)
 				{
 				  //I'm the base station, forward data onto serial
@@ -252,6 +259,14 @@ implementation {
 				}
 		}
 		  return msg;
+	}
+	
+	uint16_t getRssi(message_t *msg)
+	{
+	  if(call PacketRSSI.isSet(msg))
+	    return (uint16_t) call PacketRSSI.get(msg);
+	  else
+	    return 0xFFFF;
 	}
 
 
