@@ -18,6 +18,10 @@ implementation{
   components new TimerMilliC() as SendTimer;
   App.SendTimer -> SendTimer;  
   App.RssiMsgSend -> RssiMsgSender;
+  components new AMReceiverC(AM_RSSIMSG) as RssiMsgReceiver;
+  App.RssiRadioReceive -> RssiMsgReceiver.Receive;
+  //App.RssiPacket->RssiMsgSender.Packet;
+  //App.RssiAMPacket->RssiMsgSender.AMPacket;
 	
 	App.Boot -> MainC.Boot;
 	App.Leds -> LedsC.Leds;
