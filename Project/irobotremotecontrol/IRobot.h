@@ -26,9 +26,7 @@ uint8_t STOP_COMMAND[7] = {128,131,137,0x0,0x0,0x0,0x0}; // 207
 #define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
 
 typedef nx_struct iRobotMsg {
-	nx_uint16_t nodeid;
 	nx_uint8_t cmd;
-
 } iRobotMsg;
 
 //Adding to send rssi message

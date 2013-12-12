@@ -63,8 +63,16 @@ implementation {
 		radioBusy = FALSE;
 		radioFull = TRUE;
 
-		//set this true for Gateway    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!		
-		atomic isThisGateway = TRUE;
+		//set this true for Gateway    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		if(TOS_NODE_ID != 0)
+		{
+		  atomic isThisGateway = FALSE;
+		}
+		else if(TOS_NODE_ID == 0)
+		{
+		  atomic isThisGateway = TRUE;
+		}
+		
 		if(isThisGateway) 
 			destinationAddress = selectedRobot;
 
@@ -114,7 +122,7 @@ implementation {
 	//For sending rssi
 	  event void SendTimer.fired(){
 	    call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg));    //AM_BROADCAST_ADDR
-	    call Leds.led1Toggle();
+	    
 	  }
 
 	  event void RssiMsgSend.sendDone(message_t *m, error_t error){}
@@ -127,7 +135,6 @@ implementation {
 			iRobotMsg * btrpkt = (iRobotMsg * )(call Packet
 					.getPayload(radioQueue[radioIn], sizeof(iRobotMsg)));
 
-			btrpkt->nodeid = TOS_NODE_ID;
 			btrpkt->cmd = byte;
 
 			if(++radioIn >= RADIO_QUEUE_LEN) 
@@ -194,7 +201,7 @@ implementation {
 					if(len == sizeof(iRobotMsg)){//this will be correct always since we only have one kind of packets so far
 						iRobotMsg * btrpkt = (iRobotMsg * ) payload;
 						commandid = btrpkt->cmd;
-											
+						call Leds.led1Toggle();				
 						switch(commandid)
 						{
 							case 200:
@@ -225,16 +232,7 @@ implementation {
 							break;
 						}
 					}
-				}
-				else if(TOS_NODE_ID == 0)
-				{
-				  //I'm the base station, forward data onto serial
-				  // This is entirely useless
-				  while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
-				  
-				}
-				//TODO , if I get rssi from another node, send it back to BS with info from-nodeid , received-rssi strength
-				
+				}				
 		}
 
 		return msg;
@@ -242,11 +240,10 @@ implementation {
 	
 	event message_t * RssiRadioReceive.receive(message_t * msg, void * payload,
 			uint8_t len) {
-			uint8_t commandid = 0;
 			RssiMsg *rssiMsg;
 			
 		atomic {
-		  call Leds.led0Toggle();
+		  //call Leds.led0Toggle();
 		  
 		  rssiMsg = (RssiMsg*) payload;
 		  rssiMsg->rssi = getRssi(msg);
