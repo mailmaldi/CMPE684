@@ -48,7 +48,8 @@ implementation {
 	task void SendToRadio();
 	void Fail(uint8_t code);
 	void OK();
-
+	void Start_Timers();
+	
 	event void Boot.booted() {
 		uint8_t i;
 
@@ -70,7 +71,14 @@ implementation {
 	event void RadioControl.startDone(error_t error) {
 		if(error == SUCCESS) {
 			radioFull = FALSE;
-			call SerialControl.start();
+			//TODO do not start serial control for nodeid > 1, start blinking here itself
+			if(TOS_NODE_ID > 1)
+			{
+			    Start_Timers();
+			}
+			else {
+			    call SerialControl.start();
+			}
 		}
 		else {
 			Fail(1);
@@ -87,9 +95,7 @@ implementation {
 				Fail(1);
 			}
 			else {
-				call Timer0.startPeriodic(TIMER_INTERVAL);
-				//For sending rssi
-				call SendTimer.startPeriodic(SEND_INTERVAL_MS);
+				Start_Timers();
 			}
 
 		}
@@ -170,7 +176,7 @@ implementation {
 	///***************************************************************end of radio to uart section                   
 
 	//*******************************************************Radio to Uart Section     
-
+// DO NOT send to UART for node id > 1
 	//this will be triggered only and only if the address of the packet is my address or it is broadcast. 
 	//if we need to handle other packets, we should use snoop receive 
 	event message_t * RadioReceive.receive(message_t * msg, void * payload,
@@ -223,6 +229,8 @@ implementation {
 				  while(call UartStream.send(msg,call Packet.payloadLength(msg)) != SUCCESS);
 				  
 				}
+				//TODO , if I get rssi from another node, send it back to BS with info from-nodeid , received-rssi strength
+				
 		}
 
 		return msg;
@@ -253,7 +261,13 @@ implementation {
 	void OK() {
 		call Leds.led2Toggle();
 	}
-
+	
+	void Start_Timers() 
+	{
+	    call Timer0.startPeriodic(TIMER_INTERVAL);
+	//For sending rssi
+	    call SendTimer.startPeriodic(SEND_INTERVAL_MS);
+	}
 }
 
 
