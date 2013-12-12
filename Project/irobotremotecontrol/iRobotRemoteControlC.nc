@@ -17,10 +17,17 @@ module iRobotRemoteControlC {
 		interface AMPacket;
 		interface AMSend as RadioSend;
 		interface Receive as RadioReceive;
+		
+		//Add for sending rssi
+		interface Timer<TMilli> as SendTimer;
+		interface AMSend as RssiMsgSend;
 
 	}
 }
 implementation {
+  
+	//For sending rssi
+	 message_t empty_msg;
 
 	message_t radioQueueBufs[RADIO_QUEUE_LEN];
 	message_t * ONE_NOK radioQueue[RADIO_QUEUE_LEN];
@@ -81,6 +88,8 @@ implementation {
 			}
 			else {
 				call Timer0.startPeriodic(TIMER_INTERVAL);
+				//For sending rssi
+				call SendTimer.startPeriodic(SEND_INTERVAL_MS);
 			}
 
 		}
@@ -92,6 +101,13 @@ implementation {
 	}
 	event void SerialControl.stopDone(error_t error) {
 	}
+	
+	//For sending rssi
+	  event void SendTimer.fired(){
+	    call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg));    
+	  }
+
+	  event void RssiMsgSend.sendDone(message_t *m, error_t error){}
 
 	////////*************************************************************************uart to radio section                        
 
@@ -200,6 +216,12 @@ implementation {
 					else if (TOS_NODE_ID == 0) {
 						while(call UartStream.send(&commandid,1) != SUCCESS);
 					}
+				}
+				else if(TOS_NODE_ID == 0)
+				{
+				  //I'm the base station, forward data onto serial
+				  while(call UartStream.send(msg,call Packet.payloadLength(msg)) != SUCCESS);
+				  
 				}
 		}
 

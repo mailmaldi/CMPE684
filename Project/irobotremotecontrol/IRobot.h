@@ -11,6 +11,7 @@ enum {
 	//will be assumed as regular commands until again it sees 255	
 	UART_QUEUE_LEN = 100,
 	RADIO_QUEUE_LEN = 20,
+	 SEND_INTERVAL_MS = 1000,
 };
 
 uint8_t SING_COMMAND[15] = {128,132,140,0,4,62,12,66,12,69,12,74,36,141,0} ; // 200
@@ -29,6 +30,16 @@ typedef nx_struct iRobotMsg {
 	nx_uint8_t cmd;
 
 } iRobotMsg;
+
+//Adding to send rssi message
+enum {
+  AM_RSSIMSG = 10
+};
+
+typedef nx_struct RssiMsg{
+  nx_int16_t rssi;
+} RssiMsg;
+
 
 #endif /* I_ROBOT_H */
 

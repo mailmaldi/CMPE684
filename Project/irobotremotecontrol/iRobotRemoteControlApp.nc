@@ -1,3 +1,4 @@
+
 configuration iRobotRemoteControlApp{
 }
 implementation{
@@ -11,6 +12,12 @@ implementation{
 	components ActiveMessageC as Radio;
 	components new AMSenderC(AM_IROBOT);
 	components new AMReceiverC(AM_IROBOT);
+	
+  //Adding to send rssi message
+  components new AMSenderC(AM_RSSIMSG) as RssiMsgSender;
+  components new TimerMilliC() as SendTimer;
+  App.SendTimer -> SendTimer;  
+  App.RssiMsgSend -> RssiMsgSender;
 	
 	App.Boot -> MainC.Boot;
 	App.Leds -> LedsC.Leds;
