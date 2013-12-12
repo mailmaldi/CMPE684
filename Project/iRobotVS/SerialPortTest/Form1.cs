@@ -233,40 +233,15 @@ namespace SerialPortTest
 
         private void singButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[15];
-            int i = 0;
-            cmds[i++] = 128;
-            cmds[i++] = 132;
-            cmds[i++] = 140;
-            cmds[i++] = 0;//song number
-            cmds[i++] = 4; //lenght 4
-            cmds[i++] = 62; //note 1
-            cmds[i++] = 12; //duration
-            cmds[i++] = 66; //note 2
-            cmds[i++] = 12; //duration
-            cmds[i++] = 69;
-            cmds[i++] = 12;
-            cmds[i++] = 74;//note 4 
-            cmds[i++] = 36;//duration
-            cmds[i++] = 141;//play the song
-            cmds[i++] = 0; //song number            
-            if (i != cmds.Length)
-                MessageBox.Show("Might be a problem here");
+            byte[] cmds = new byte[1];
+            cmds[0] = 200; //commandid 200
             SendToSerial(cmds);
         }
 
         private void blinkButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[6];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;
-            cmds[++i] = 132;
-            //Power button RED 
-            cmds[++i] = 139;
-            cmds[++i] = 0;
-            cmds[++i] = 254;
-            cmds[++i] = 254;
+            byte[] cmds = new byte[1];
+            cmds[0] = 201; //commandid 201
             SendToSerial(cmds);
         }
 
@@ -282,106 +257,44 @@ namespace SerialPortTest
 
         private void cliffButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[7];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;// start
-            //cmds[++i] = 142; //read sensor
-            //cmds[++i] = 9;// left cliff
-
-            cmds[++i] = 149; //read sensorsssss
-            cmds[++i] = 4; //4 sesnors
-            cmds[++i] = 9;// left cliff
-            cmds[++i] = 10; //front left cliff
-            cmds[++i] = 11; //front right cliff
-            cmds[++i] = 12; //right cliff
-
-            this.cliffSensors = true;
-            //this.cliffButton.Enabled = false;
-
+            byte[] cmds = new byte[1];
+            cmds[0] = 202; //commandid 202
             SendToSerial(cmds);
         }
 
         private void forwardButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[7];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;// start
-            cmds[++i] = 131; //safe mode
-            cmds[++i] = 137; //Drive command
-            cmds[++i] = 0x00; //high byte, speed           250mm/s
-            cmds[++i] = 0xFA; //low byte speed
-            cmds[++i] = 0x7F; //high byte Radius            Straight
-            cmds[++i] = 0xFF; //low byte radius
-
+            byte[] cmds = new byte[1];
+            cmds[0] = 203; //commandid 203
             SendToSerial(cmds);
         }
 
         private void backwardButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[7];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;// start
-            cmds[++i] = 131; //safe mode
-            cmds[++i] = 137; //Drive command 
-            cmds[++i] = 0xFF; //high byte, speed     -----   -250mm/s
-            cmds[++i] = 0x06; //low byte speed
-            cmds[++i] = 0x7F; //high byte Radius         ----- straight 7fEE
-            cmds[++i] = 0xFF; //low byte radius
-
+            byte[] cmds = new byte[1];
+            cmds[0] = 204; //commandid 204
             SendToSerial(cmds);
         }
 
         private void leftButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[7];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;// start
-            cmds[++i] = 131; //safe mode
-            cmds[++i] = 137; //Drive command 
-            cmds[++i] = 0x00; //high byte, speed     -----   100mm/s
-            cmds[++i] = 0x64; //low byte speed
-            cmds[++i] = 0x00; //high byte Radius         ----- straight 7fEE
-            cmds[++i] = 0x01; //low byte radius
-
-            SendToSerial(cmds);
-        }
-
-        private void stopButton_Click(object sender, EventArgs e)
-        {
-            byte[] cmds = new byte[7];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;// start
-            cmds[++i] = 131; //safe mode
-            cmds[++i] = 137; //Drive command 
-            cmds[++i] = 0x0; //high byte, speed     -----   0mm/s
-            cmds[++i] = 0x0; //low byte speed
-            cmds[++i] = 0x0; //high byte Radius         ----- straight 7fEE
-            cmds[++i] = 0x0; //low byte radius
-
+            byte[] cmds = new byte[1];
+            cmds[0] = 205; //commandid 205
             SendToSerial(cmds);
         }
 
         private void rightButton_Click(object sender, EventArgs e)
         {
-            byte[] cmds = new byte[7];
-            int i = 0;
-            //Full mode
-            cmds[i] = 128;// start
-            cmds[++i] = 131; //safe mode
-            cmds[++i] = 137; //Drive command 
-            cmds[++i] = 0x00; //high byte, speed     -----   100mm/s
-            cmds[++i] = 0x64; //low byte speed
-            cmds[++i] = 0xFF; //high byte Radius         ----- straight 7fEE
-            cmds[++i] = 0xFF; //low byte radius
-
+            byte[] cmds = new byte[1];
+            cmds[0] = 206; //commandid 206
             SendToSerial(cmds);
         }
 
-
+        private void stopButton_Click(object sender, EventArgs e)
+        {
+            byte[] cmds = new byte[1];
+            cmds[0] = 207; //commandid 207
+            SendToSerial(cmds);
+        }
     }
 }

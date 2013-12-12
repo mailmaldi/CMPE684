@@ -22,11 +22,6 @@ module iRobotRemoteControlC {
 }
 implementation {
 
-	uint8_t uartQueueBufs[UART_QUEUE_LEN];
-	//uint8_t * uartQueue[UART_QUEUE_LEN];
-	uint8_t uartIn, uartOut;
-	bool uartBusy, uartFull;
-
 	message_t radioQueueBufs[RADIO_QUEUE_LEN];
 	message_t * ONE_NOK radioQueue[RADIO_QUEUE_LEN];
 	uint8_t radioIn, radioOut;
@@ -43,19 +38,11 @@ implementation {
 	bool isThisGateway = FALSE;
 	uint8_t destinationAddress = 0; //I assume 0 as gateway  --default destination 
 
-	task void SendToSerial();
-	task void SendToRadio();
 	void Fail(uint8_t code);
 	void OK();
 
 	event void Boot.booted() {
 		uint8_t i;
-		//setting up UART queue. this will be filled by packets received via radio and will be accessed by UART
-		//for(i = 0; i < UART_QUEUE_LEN; i++) 
-		//	uartQueue[i] = &uartQueueBufs[i];
-		uartIn = uartOut = 0;
-		uartBusy = FALSE;
-		uartFull = TRUE;
 
 		//Radio queue, filled by UART and consumed by Radio
 		for(i = 0; i < RADIO_QUEUE_LEN; i++) 
@@ -172,105 +159,69 @@ implementation {
 	//if we need to handle other packets, we should use snoop receive 
 	event message_t * RadioReceive.receive(message_t * msg, void * payload,
 			uint8_t len) {
+			nx_uint16_t commandid = 0;
+			nx_uint8_t remaining = 0;
+			nx_uint8_t command_length = 0;
 		atomic {
-			if( ! uartFull) {
+
 				if(len == sizeof(iRobotMsg)){//this will be correct always since we only have one kind of packets so far
 					iRobotMsg * btrpkt = (iRobotMsg * ) payload;
-
-					uartQueueBufs[uartIn] = btrpkt->cmd;
-
-					uartIn = (uartIn + 1) % UART_QUEUE_LEN;
-
-					if(uartIn == uartOut) 
-						uartFull = TRUE;
-
-					if( ! uartBusy) {
-						post SendToSerial();
-						uartBusy = TRUE;
+					
+					if(TOS_NODE_ID == 1) {
+						commandid = btrpkt->cmd;
+						switch(commandid)
+						{
+							case 200:
+								command_length = sizeof(SING_COMMAND) / sizeof(SING_COMMAND[0]);
+								while(call UartStream.send(SING_COMMAND,command_length) != SUCCESS);
+							break;
+							case 201:
+								command_length = sizeof(BLINK_COMMAND) / sizeof(BLINK_COMMAND[0]);
+								while(call UartStream.send(BLINK_COMMAND,command_length) != SUCCESS);
+							break;
+							case 202:
+								command_length = sizeof(CLIFF_COMMAND) / sizeof(CLIFF_COMMAND[0]);
+								while(call UartStream.send(CLIFF_COMMAND,command_length) != SUCCESS);
+							break;
+							case 203:
+								command_length = sizeof(FORWARD_COMMAND) / sizeof(FORWARD_COMMAND[0]);
+								while(call UartStream.send(FORWARD_COMMAND,command_length) != SUCCESS);
+							break;
+							case 204:
+								command_length = sizeof(BACK_COMMAND) / sizeof(BACK_COMMAND[0]);
+								while(call UartStream.send(BACK_COMMAND,command_length) != SUCCESS);
+							break;
+							case 205:
+								command_length = sizeof(LEFT_COMMAND) / sizeof(LEFT_COMMAND[0]);
+								while(call UartStream.send(LEFT_COMMAND,command_length) != SUCCESS);
+							break;
+							case 206:
+								command_length = sizeof(RIGHT_COMMAND) / sizeof(RIGHT_COMMAND[0]);
+								while(call UartStream.send(RIGHT_COMMAND,command_length) != SUCCESS);
+							break;
+							case 207:
+								command_length = sizeof(STOP_COMMAND) / sizeof(STOP_COMMAND[0]);
+								while(call UartStream.send(STOP_COMMAND,command_length) != SUCCESS);
+							break;
+							default:
+							break;
+						}
+					}
+					else if (TOS_NODE_ID == 0) {
+						while(call UartStream.send(btrpkt,sizeof(btrpkt)) != SUCCESS);
 					}
 				}
-			}
-			else {
-				Fail(3);
-			}
 		}
 
 		return msg;
 	}
 
-	task void SendToSerial() {
-		atomic if(uartIn == uartOut && ! uartFull) {
-			uartBusy = FALSE;
-			return;
-		}
-
-		if(call UartStream.send(&uartQueueBufs[uartOut], 1) == SUCCESS) 
-			OK();
-		else {
-			Fail(3);
-			post SendToSerial();
-		}
-	}
 
 	async event void UartStream.sendDone(uint8_t * buf, uint16_t len,
 			error_t error) {
-		if(error == FAIL) {
-			Fail(3);
-		}
-		else {
-			atomic {
-				if(buf == &uartQueueBufs[uartOut]){ //this must be always true in my case sine we only have one user of the queue
-					if(++uartOut >= UART_QUEUE_LEN) 
-						uartOut = 0;
-					if(uartFull) 
-						uartFull = FALSE;
-				}
-			}
-		}
-		post SendToSerial();
 	}
 
 	//*************************************************************end of Radio to UART section                
-
-	void Rest() {
-		if(++uartOut >= UART_QUEUE_LEN) 
-			uartOut = 0;
-
-		if(uartFull) 
-			uartFull = FALSE;
-		post SendToRadio();
-	}
-
-	void RealRadioSend() {
-		iRobotMsg * btrpkt = (iRobotMsg * )(call Packet.getPayload(&pkt,
-				sizeof(iRobotMsg)));
-
-		btrpkt->nodeid = TOS_NODE_ID;
-		btrpkt->cmd = uartQueueBufs[uartOut];
-
-		if(isThisGateway){ //this is pc side mote 
-			uint8_t temp;
-			atomic temp = selectedRobot;
-
-			if(call RadioSend.send(temp, &pkt, sizeof(iRobotMsg)) == SUCCESS) {
-				OK();
-			}
-			else {
-				Fail(0);
-				post SendToRadio();
-			}
-
-		}
-		else { //this is robot side mote
-			if(call RadioSend.send(GATEWAY_ID, &pkt, sizeof(iRobotMsg)) == SUCCESS) {
-				OK();
-			}
-			else {
-				Fail(0);
-				post SendToRadio();
-			}
-		}
-	}
 
 	async event void UartStream.receiveDone(uint8_t * buf, uint16_t len,
 			error_t error) {

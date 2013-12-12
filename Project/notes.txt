@@ -5,6 +5,23 @@
 test by sending move forward , then move right
 5. this entire is shit, 1 packet per opcode, so even if 1 packet lost , everything lost
 
+6. for rssi, every node needs to exchange messages, not just to BS,
+else only BS will know where it is in ref to other motes, but other motes wont.
+So every mote at the start needs to find out what rssi it is from other motes and send to BS, so BS can determine coordinate system
+
+7. so, on every mote, we not only need rssi code, but, also to receive from other motes and forward to BS
+
+8. BS receives RSSI messages for itself, and & also modified rssi data collation from other motes, & sensor message once & irbotomsg?
+
+9. irobot receives rssi from others, collate info & send to BS
+irobot receives irobotmsg as command to move or sing
+
+10. how do i multiplex multiple amsend with the same radio?
+
+11. fn to turn by degrees
+
+
+tmo sim
 8901
 2601
 3357
