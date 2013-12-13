@@ -126,6 +126,9 @@ implementation {
 	
 	//For sending rssi
 	  event void SendTimer.fired(){
+	    RssiMsg *rssiMsg;
+	    rssiMsg = (RssiMsg*) (call Packet.getPayload(&empty_msg, sizeof (RssiMsg)));
+	    rssiMsg->nodeid = TOS_NODE_ID;
 	    call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg));    //AM_BROADCAST_ADDR
 	    
 	  }
@@ -249,7 +252,7 @@ implementation {
 			RssiMsg *rssiMsg;
 			
 		atomic {
-		  //call Leds.led0Toggle();
+		  call Leds.led0Toggle();
 		  
 		  rssiMsg = (RssiMsg*) payload;
 		  rssiMsg->rssi = getRssi(msg);

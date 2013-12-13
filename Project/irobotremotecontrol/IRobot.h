@@ -34,6 +34,7 @@ typedef nx_struct iRobotMsg {
 
 typedef nx_struct RssiMsg{
   nx_int16_t rssi;
+  nx_uint16_t nodeid;
 } RssiMsg;
 
 
