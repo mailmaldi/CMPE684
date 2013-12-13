@@ -22,7 +22,13 @@ module iRobotRemoteControlC {
 		interface Timer<TMilli> as SendTimer;
 		interface AMSend as RssiMsgSend;
 		interface Receive as RssiRadioReceive;
-		interface PacketField<uint8_t> as PacketRSSI;
+		#ifdef __CC2420_H__
+		  interface CC2420Packet;
+		#elif defined(TDA5250_MESSAGE_H)
+		  interface Tda5250Packet;    
+		#else
+		  interface PacketField<uint8_t> as PacketRSSI;
+		#endif 
 
 	}
 }
@@ -43,7 +49,6 @@ implementation {
 	bool serialBusy = FALSE;
 	uint8_t receivedByte; //from serial port    
 	uint8_t selectedRobot = 1;
-	bool robotSelectMode = FALSE;
 	bool isThisGateway = TRUE;
 	uint8_t destinationAddress = 0; //I assume 0 as gateway  --default destination 
 
@@ -201,7 +206,8 @@ implementation {
 					if(len == sizeof(iRobotMsg)){//this will be correct always since we only have one kind of packets so far
 						iRobotMsg * btrpkt = (iRobotMsg * ) payload;
 						commandid = btrpkt->cmd;
-						call Leds.led1Toggle();				
+						call Leds.led1On();	
+						call Leds.led0Off();
 						switch(commandid)
 						{
 							case 200:
@@ -258,17 +264,39 @@ implementation {
 		  return msg;
 	}
 	
-	uint16_t getRssi(message_t *msg)
-	{
-	  if(call PacketRSSI.isSet(msg))
-	    return (uint16_t) call PacketRSSI.get(msg);
-	  else
-	    return 0xFFFF;
-	}
+#ifdef __CC2420_H__  
+  uint16_t getRssi(message_t *msg){
+    return (uint16_t) call CC2420Packet.getRssi(msg);
+  }
+#elif defined(CC1K_RADIO_MSG_H)
+    uint16_t getRssi(message_t *msg){
+    cc1000_metadata_t *md =(cc1000_metadata_t*) msg->metadata;
+    return md->strength_or_preamble;
+  }
+#elif defined(PLATFORM_IRIS) || defined(PLATFORM_UCMINI)
+  uint16_t getRssi(message_t *msg){
+    if(call PacketRSSI.isSet(msg))
+      return (uint16_t) call PacketRSSI.get(msg);
+    else
+      return 0xFFFF;
+  }
+#elif defined(TDA5250_MESSAGE_H)
+   uint16_t getRssi(message_t *msg){
+       return call Tda5250Packet.getSnr(msg);
+   }
+#else
+  #error Radio chip not supported! This demo currently works only \
+         for motes with CC1000, CC2420, RF230, RFA1 or TDA5250 radios.  
+#endif
 
 
 	async event void UartStream.sendDone(uint8_t * buf, uint16_t len,
 			error_t error) {
+	  if(error == FAIL) 
+	  {
+             call Leds.led0On();
+	     call Leds.led1Off();
+          }
 	}
 
 	//*************************************************************end of Radio to UART section                
