@@ -29,6 +29,10 @@ module iRobotRemoteControlC {
 		#else
 		  interface PacketField<uint8_t> as PacketRSSI;
 		#endif 
+		  
+		interface Timer<TMilli> as RssiArraySendTimer;
+		interface AMSend as RssiArraySend;
+		interface Receive as RssiArrayReceive;
 
 	}
 }
@@ -36,6 +40,7 @@ implementation {
   
 	//For sending rssi
 	 message_t empty_msg;
+	 uint16_t rssi[5] = {0,0,0,0,0};
 
 	message_t radioQueueBufs[RADIO_QUEUE_LEN];
 	message_t * ONE_NOK radioQueue[RADIO_QUEUE_LEN];
@@ -134,6 +139,27 @@ implementation {
 	  }
 
 	  event void RssiMsgSend.sendDone(message_t *m, error_t error){}
+	  
+	  
+	  event void RssiArraySendTimer.fired() {
+	    message_t msg;
+	    RssiArray * btrpkt;
+	    int i = 0;
+	    
+	    btrpkt = (RssiArray*) (call Packet.getPayload(&msg, sizeof (RssiArray)));
+	    btrpkt->nodeid = TOS_NODE_ID;
+	    for(i=0;i<5;i++)
+	    {
+	      btrpkt->rssi[i] = rssi[i];
+	    }
+	    call Packet.setPayloadLength(&msg, sizeof (RssiArray));
+             call AMPacket.setDestination(&msg, 0);
+             call AMPacket.setSource(&msg, TOS_NODE_ID);
+	     call RssiArraySend.send(0, &msg, sizeof(RssiArray));
+	     call Leds.led1Toggle();	    
+	  }
+	  
+	   event void RssiArraySend.sendDone(message_t *m, error_t error){}
 
 	////////*************************************************************************uart to radio section                        
 
@@ -247,24 +273,46 @@ implementation {
 		return msg;
 	}
 	
-	event message_t * RssiRadioReceive.receive(message_t * msg, void * payload,
-			uint8_t len) {
-			RssiMsg *rssiMsg;
+	event message_t * RssiRadioReceive.receive(message_t * msg, void * payload, uint8_t len) 
+	{
+		RssiMsg *rssiMsg;
 			
-		atomic {
-		  call Leds.led0Toggle();
+		atomic 
+		{
+		  //call Leds.led0Toggle();
 		  
 		  rssiMsg = (RssiMsg*) payload;
 		  rssiMsg->rssi = getRssi(msg);
-		  
+		  rssi[rssiMsg->nodeid] = rssiMsg->rssi;
+		  /*
 		  if(TOS_NODE_ID == 0)
-				{
-				  //I'm the base station, forward data onto serial
-				  while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
-				  
-				}
+		  {
+		    //I'm the base station, forward data onto serial
+		    while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
+		  }
+		  */
 		}
 		  return msg;
+	}
+	
+      event message_t * RssiArrayReceive.receive(message_t * msg, void * payload,uint8_t len) 
+      {
+		
+		RssiArray *rssiArray;
+			
+		atomic 
+		{
+		  call Leds.led0Toggle();
+		  
+		  rssiArray = (RssiArray*) payload;
+		  
+		  if(TOS_NODE_ID == 0)
+		  {
+		    //I'm the base station, forward data onto serial
+		    while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);  
+		  }
+		}
+		return msg;
 	}
 	
 #ifdef __CC2420_H__  
@@ -328,6 +376,7 @@ implementation {
 	    call Timer0.startPeriodic(TIMER_INTERVAL);
 	//For sending rssi
 	    call SendTimer.startPeriodic(SEND_INTERVAL_MS);
+	    call RssiArraySendTimer.startPeriodic(RSSI_ARRAY_INTERVAL_MS);
 	}
 }
 

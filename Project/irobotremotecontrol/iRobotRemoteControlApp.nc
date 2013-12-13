@@ -35,6 +35,13 @@ implementation{
   components Tda5250ActiveMessageC;
   App -> Tda5250ActiveMessageC.Tda5250Packet;
 #endif
+  
+components new AMSenderC(AM_RSSIARR) as RssiArraySender;
+components new AMReceiverC(AM_RSSIARR) as RssiArrayReceiver;
+App.RssiArraySend -> RssiArraySender;
+App.RssiArrayReceive -> RssiArrayReceiver.Receive;
+components new TimerMilliC() as RssiArraySendTimer;
+App.RssiArraySendTimer -> RssiArraySendTimer;
 	
 	App.Boot -> MainC.Boot;
 	App.Leds -> LedsC.Leds;
