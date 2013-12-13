@@ -21,6 +21,14 @@ module iRobotRemoteControlC {
 		//Add for sending rssi
 		interface Timer<TMilli> as SendTimer;
 		interface AMSend as RssiMsgSend;
+		interface Receive as RssiRadioReceive;
+		#ifdef __CC2420_H__
+		  interface CC2420Packet;
+		#elif defined(TDA5250_MESSAGE_H)
+		  interface Tda5250Packet;    
+		#else
+		  interface PacketField<uint8_t> as PacketRSSI;
+		#endif 
 
 	}
 }
@@ -41,14 +49,15 @@ implementation {
 	bool serialBusy = FALSE;
 	uint8_t receivedByte; //from serial port    
 	uint8_t selectedRobot = 1;
-	bool robotSelectMode = FALSE;
 	bool isThisGateway = TRUE;
 	uint8_t destinationAddress = 0; //I assume 0 as gateway  --default destination 
 
 	task void SendToRadio();
 	void Fail(uint8_t code);
 	void OK();
-
+	void Start_Timers();
+	uint16_t getRssi(message_t *msg);
+	
 	event void Boot.booted() {
 		uint8_t i;
 
@@ -59,8 +68,16 @@ implementation {
 		radioBusy = FALSE;
 		radioFull = TRUE;
 
-		//set this true for Gateway    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!		
-		atomic isThisGateway = TRUE;
+		//set this true for Gateway    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		if(TOS_NODE_ID != 0)
+		{
+		  atomic isThisGateway = FALSE;
+		}
+		else if(TOS_NODE_ID == 0)
+		{
+		  atomic isThisGateway = TRUE;
+		}
+		
 		if(isThisGateway) 
 			destinationAddress = selectedRobot;
 
@@ -70,7 +87,14 @@ implementation {
 	event void RadioControl.startDone(error_t error) {
 		if(error == SUCCESS) {
 			radioFull = FALSE;
-			call SerialControl.start();
+			//TODO do not start serial control for nodeid > 1, start blinking here itself
+			if(TOS_NODE_ID > 1)
+			{
+			    Start_Timers();
+			}
+			else {
+			    call SerialControl.start();
+			}
 		}
 		else {
 			Fail(1);
@@ -87,9 +111,7 @@ implementation {
 				Fail(1);
 			}
 			else {
-				call Timer0.startPeriodic(TIMER_INTERVAL);
-				//For sending rssi
-				call SendTimer.startPeriodic(SEND_INTERVAL_MS);
+				Start_Timers();
 			}
 
 		}
@@ -104,7 +126,8 @@ implementation {
 	
 	//For sending rssi
 	  event void SendTimer.fired(){
-	    call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg));    
+	    call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg));    //AM_BROADCAST_ADDR
+	    
 	  }
 
 	  event void RssiMsgSend.sendDone(message_t *m, error_t error){}
@@ -117,7 +140,6 @@ implementation {
 			iRobotMsg * btrpkt = (iRobotMsg * )(call Packet
 					.getPayload(radioQueue[radioIn], sizeof(iRobotMsg)));
 
-			btrpkt->nodeid = TOS_NODE_ID;
 			btrpkt->cmd = byte;
 
 			if(++radioIn >= RADIO_QUEUE_LEN) 
@@ -170,19 +192,22 @@ implementation {
 	///***************************************************************end of radio to uart section                   
 
 	//*******************************************************Radio to Uart Section     
-
+// DO NOT send to UART for node id > 1
 	//this will be triggered only and only if the address of the packet is my address or it is broadcast. 
 	//if we need to handle other packets, we should use snoop receive 
 	event message_t * RadioReceive.receive(message_t * msg, void * payload,
 			uint8_t len) {
 			uint8_t commandid = 0;
+			
 		atomic {
-
-				if(len == sizeof(iRobotMsg)){//this will be correct always since we only have one kind of packets so far
-					iRobotMsg * btrpkt = (iRobotMsg * ) payload;
-					commandid = btrpkt->cmd;
-					
-					if(TOS_NODE_ID == 1) {						
+				
+				if(TOS_NODE_ID == 1) 
+				{
+					if(len == sizeof(iRobotMsg)){//this will be correct always since we only have one kind of packets so far
+						iRobotMsg * btrpkt = (iRobotMsg * ) payload;
+						commandid = btrpkt->cmd;
+						call Leds.led1On();	
+						call Leds.led0Off();
 						switch(commandid)
 						{
 							case 200:
@@ -213,24 +238,65 @@ implementation {
 							break;
 						}
 					}
-					else if (TOS_NODE_ID == 0) {
-						while(call UartStream.send(&commandid,1) != SUCCESS);
-					}
-				}
-				else if(TOS_NODE_ID == 0)
-				{
-				  //I'm the base station, forward data onto serial
-				  while(call UartStream.send(msg,call Packet.payloadLength(msg)) != SUCCESS);
-				  
-				}
+				}				
 		}
 
 		return msg;
 	}
+	
+	event message_t * RssiRadioReceive.receive(message_t * msg, void * payload,
+			uint8_t len) {
+			RssiMsg *rssiMsg;
+			
+		atomic {
+		  //call Leds.led0Toggle();
+		  
+		  rssiMsg = (RssiMsg*) payload;
+		  rssiMsg->rssi = getRssi(msg);
+		  
+		  if(TOS_NODE_ID == 0)
+				{
+				  //I'm the base station, forward data onto serial
+				  while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
+				  
+				}
+		}
+		  return msg;
+	}
+	
+#ifdef __CC2420_H__  
+  uint16_t getRssi(message_t *msg){
+    return (uint16_t) call CC2420Packet.getRssi(msg);
+  }
+#elif defined(CC1K_RADIO_MSG_H)
+    uint16_t getRssi(message_t *msg){
+    cc1000_metadata_t *md =(cc1000_metadata_t*) msg->metadata;
+    return md->strength_or_preamble;
+  }
+#elif defined(PLATFORM_IRIS) || defined(PLATFORM_UCMINI)
+  uint16_t getRssi(message_t *msg){
+    if(call PacketRSSI.isSet(msg))
+      return (uint16_t) call PacketRSSI.get(msg);
+    else
+      return 0xFFFF;
+  }
+#elif defined(TDA5250_MESSAGE_H)
+   uint16_t getRssi(message_t *msg){
+       return call Tda5250Packet.getSnr(msg);
+   }
+#else
+  #error Radio chip not supported! This demo currently works only \
+         for motes with CC1000, CC2420, RF230, RFA1 or TDA5250 radios.  
+#endif
 
 
 	async event void UartStream.sendDone(uint8_t * buf, uint16_t len,
 			error_t error) {
+	  if(error == FAIL) 
+	  {
+             call Leds.led0On();
+	     call Leds.led1Off();
+          }
 	}
 
 	//*************************************************************end of Radio to UART section                
@@ -253,7 +319,13 @@ implementation {
 	void OK() {
 		call Leds.led2Toggle();
 	}
-
+	
+	void Start_Timers() 
+	{
+	    call Timer0.startPeriodic(TIMER_INTERVAL);
+	//For sending rssi
+	    call SendTimer.startPeriodic(SEND_INTERVAL_MS);
+	}
 }
 
 
