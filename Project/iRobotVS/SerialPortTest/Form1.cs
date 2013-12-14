@@ -203,7 +203,7 @@ namespace SerialPortTest
             }
             else
             {
-                this.rawDataTextBox.Text += str + "\r\n" ;
+                this.rawDataTextBox.Text += str + "\r\n";
             }
         }
 
@@ -361,7 +361,7 @@ namespace SerialPortTest
                             buffer[count++] = result;
                         }
                         Console.Out.Write("RAW: ");
-                        for (int i = 0; i < count; i++ )
+                        for (int i = 0; i < count; i++)
                         {
                             Console.Out.Write(buffer[i] + " ");
                             file2.Write(buffer[i] + " ");
@@ -369,6 +369,7 @@ namespace SerialPortTest
                         Console.Out.WriteLine();
                         file2.WriteLine();
                         file2.Flush();
+                        parseFrame(buffer, count);
                         //string hexstr = ByteArrayToHexString(buffer);
                         //Console.Out.WriteLine(hexstr);
 
@@ -377,7 +378,41 @@ namespace SerialPortTest
                 //Console.Out.Write(result + " ");
             }
 
+        }// End of ParserMethod Thread function
+
+        private void parseFrame(byte[] buffer, int count)
+        {
+            byte groupId = buffer[7];
+            switch (groupId)
+            {
+                case 77:
+                    updateRssiList(buffer, count);
+                    break;
+                default:
+                    Console.Out.WriteLine("MALDI: NO GROUP ID IN PREVIOUS BUFFER!");
+                    break;
+            }
         }
+
+        //TODO This is a bad function, parse more nicely please
+        private void updateRssiList(byte[] buffer, int count)
+        {
+            if(buffer[7] != 77)
+                return;
+
+            List<RssiValue> values = new List<RssiValue>();
+            int nodeid = buffer[9];
+            values.Add(new RssiValue(0, buffer[11]));
+            values.Add(new RssiValue(1, buffer[13]));
+            values.Add(new RssiValue(2, buffer[15]));
+            values.Add(new RssiValue(3, buffer[17]));
+            values.Add(new RssiValue(4, buffer[19]));
+
+            rssiValues.setValuesForNode(nodeid, values, false);
+
+            //Console.Out.WriteLine(rssiValues.toString());
+        }
+
 
     }
 }
