@@ -98,6 +98,21 @@ namespace SerialPortTest
             }
         }
 
+        public void parseFrameAndUpdate(byte[] buffer, int bytesCount)
+        {
+            Console.Out.WriteLine("MALDI: Starting to parse bytes");
+            try
+            {
+
+            }
+            catch (Exception e)
+            {
+                Console.Out.WriteLine("Exception on the following buffer");
+                Console.Out.WriteLine(buffer);
+                Console.Out.WriteLine( e.StackTrace);
+            }
+        }
+
         public string toString()
         {
             string str = "";

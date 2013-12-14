@@ -8,6 +8,9 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.IO.Ports;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SerialPortTest
 {
@@ -21,10 +24,15 @@ namespace SerialPortTest
         private int currentReadNumber = 0;
         private byte[] sensorsData;
 
-        private static string dir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        private static byte[] newline = Encoding.ASCII.GetBytes(Environment.NewLine);
+        private RssiValues rssiValues = new RssiValues();
+        Thread serialQParserThread;
+
+        private byte[] newline = Encoding.ASCII.GetBytes(Environment.NewLine);
         //private static System.IO.FileStream file = new FileStream(dir + "\\test.txt", FileMode.Create);
-        private static System.IO.StreamWriter file = new System.IO.StreamWriter( dir + "\\test.txt" );
+        private System.IO.StreamWriter file = new System.IO.StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\test.txt");
+        private System.IO.StreamWriter file2 = new System.IO.StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\test2.txt");
+
+        private BlockingCollection<byte> serialQ = new BlockingCollection<byte>();
 
         private delegate void AddItemCallBack(string str);
         private delegate void GUIRelatedUpdateCallBack(bool state);
@@ -71,6 +79,7 @@ namespace SerialPortTest
 
         private void OpenThePort(String portName)
         {
+            serialQParserThread = new Thread(ParserMethod);
             if (openButton.Text == "Open")
             {
                 try
@@ -81,6 +90,8 @@ namespace SerialPortTest
                     serialPort.ReadBufferSize = 20;
                     serialPort.ErrorReceived += new SerialErrorReceivedEventHandler(serialPort_ErrorReceived);
                     serialPort.Open();
+
+                    serialQParserThread.Start();
 
                     openButton.Text = "Close";
                     ButtonEnables(true);
@@ -100,6 +111,7 @@ namespace SerialPortTest
                 {
                     serialPort.Close();
                     serialPort.Dispose();
+                    serialQParserThread.Abort();
 
                     openButton.Text = "Open";
                     ButtonEnables(false);
@@ -113,7 +125,9 @@ namespace SerialPortTest
 
         void serialPort_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
         {
-            MessageBox.Show("What the heck");
+            //MessageBox.Show("What the heck");
+            Console.Out.WriteLine("What the heck");
+            //TODO IF error, then wipe out the current buffer?
         }
 
         void serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -124,8 +138,12 @@ namespace SerialPortTest
             //file.Write(buffer, 0, bytesCount);
             //file.Write(newline, 0, newline.Length);
 
-            string hexStr = ByteArrayToHexString(buffer);
+            foreach (byte b in buffer)
+            {
+                serialQ.Add(b);
+            }
 
+            string hexStr = ByteArrayToHexString(buffer);
             file.WriteLine(hexStr);
             file.Flush();
 
@@ -185,7 +203,7 @@ namespace SerialPortTest
             }
             else
             {
-                this.rawDataTextBox.Text += str + "\r\n";
+                this.rawDataTextBox.Text = str + "\r\n" + this.rawDataTextBox.Text;
             }
         }
 
@@ -309,5 +327,16 @@ namespace SerialPortTest
             cmds[0] = 207; //commandid 207
             SendToSerial(cmds);
         }
+
+        private void ParserMethod()
+        {
+            while (true)
+            {
+                byte result = serialQ.Take();
+                Console.Out.Write(result + " ");
+            }
+
+        }
+
     }
 }
