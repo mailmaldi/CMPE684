@@ -383,7 +383,7 @@ implementation {
 	{
 	  //startPeriodic
 	  //startOneShot
-	    call Timer0.startOneShot(TIMER_INTERVAL);
+	    call Timer0.startPeriodic(TIMER_INTERVAL);
 	//For sending rssi
 	    call SendTimer.startOneShot(SEND_INTERVAL_MS);
 	    call RssiArraySendTimer.startOneShot(RSSI_ARRAY_INTERVAL_MS);
