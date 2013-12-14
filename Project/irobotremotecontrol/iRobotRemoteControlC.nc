@@ -134,7 +134,7 @@ implementation {
 	    RssiMsg *rssiMsg;
 	    rssiMsg = (RssiMsg*) (call Packet.getPayload(&empty_msg, sizeof (RssiMsg)));
 	    rssiMsg->nodeid = TOS_NODE_ID;
-	    call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg));    //AM_BROADCAST_ADDR
+	    while(call RssiMsgSend.send(AM_BROADCAST_ADDR, &empty_msg, sizeof(RssiMsg)) != SUCCESS );    //AM_BROADCAST_ADDR
 	    
 	  }
 
@@ -146,16 +146,22 @@ implementation {
 	    RssiArray * btrpkt;
 	    int i = 0;
 	    
+	    if(TOS_NODE_ID == 0)
+	    {
+	      return;
+	      //TODO send via serial instead here
+	    }
+	    
 	    btrpkt = (RssiArray*) (call Packet.getPayload(&msg, sizeof (RssiArray)));
 	    btrpkt->nodeid = TOS_NODE_ID;
 	    for(i=0;i<5;i++)
 	    {
 	      btrpkt->rssi[i] = rssi[i];
 	    }
-	    call Packet.setPayloadLength(&msg, sizeof (RssiArray));
-             call AMPacket.setDestination(&msg, 0);
-             call AMPacket.setSource(&msg, TOS_NODE_ID);
-	     call RssiArraySend.send(0, &msg, sizeof(RssiArray));
+	    //call Packet.setPayloadLength(&msg, sizeof (RssiArray));
+            // call AMPacket.setDestination(&msg, 0);
+            // call AMPacket.setSource(&msg, TOS_NODE_ID);
+	     while(call RssiArraySend.send(0, &msg, sizeof(RssiArray)) != SUCCESS );
 	     call Leds.led1Toggle();	    
 	  }
 	  
@@ -284,13 +290,15 @@ implementation {
 		  rssiMsg = (RssiMsg*) payload;
 		  rssiMsg->rssi = getRssi(msg);
 		  rssi[rssiMsg->nodeid] = rssiMsg->rssi;
-		  /*
+		  
+		  //TODO comment this part in final
 		  if(TOS_NODE_ID == 0)
 		  {
 		    //I'm the base station, forward data onto serial
 		    while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
 		  }
-		  */
+		  
+		  
 		}
 		  return msg;
 	}
@@ -373,10 +381,12 @@ implementation {
 	
 	void Start_Timers() 
 	{
-	    call Timer0.startPeriodic(TIMER_INTERVAL);
+	  //startPeriodic
+	  //startOneShot
+	    call Timer0.startOneShot(TIMER_INTERVAL);
 	//For sending rssi
-	    call SendTimer.startPeriodic(SEND_INTERVAL_MS);
-	    call RssiArraySendTimer.startPeriodic(RSSI_ARRAY_INTERVAL_MS);
+	    call SendTimer.startOneShot(SEND_INTERVAL_MS);
+	    call RssiArraySendTimer.startOneShot(RSSI_ARRAY_INTERVAL_MS);
 	}
 }
 
