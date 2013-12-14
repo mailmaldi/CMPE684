@@ -40,6 +40,7 @@ implementation {
   
 	//For sending rssi
 	 message_t empty_msg;
+	 message_t empty_msg2;
 	 uint16_t rssi[5] = {0,0,0,0,0};
 
 	message_t radioQueueBufs[RADIO_QUEUE_LEN];
@@ -138,34 +139,45 @@ implementation {
 	    
 	  }
 
-	  event void RssiMsgSend.sendDone(message_t *m, error_t error){}
+	  event void RssiMsgSend.sendDone(message_t *m, error_t error)
+	  {
+	    call SendTimer.startOneShot(SEND_INTERVAL_MS);
+	  }
 	  
 	  
 	  event void RssiArraySendTimer.fired() {
-	    message_t msg;
-	    RssiArray * btrpkt;
+	    //message_t msg;
+	    RssiArray * rssiArray;
 	    int i = 0;
 	    
-	    if(TOS_NODE_ID == 0)
-	    {
-	      return;
-	      //TODO send via serial instead here
-	    }
-	    
-	    btrpkt = (RssiArray*) (call Packet.getPayload(&msg, sizeof (RssiArray)));
-	    btrpkt->nodeid = TOS_NODE_ID;
+	    rssiArray = (RssiArray*) (call Packet.getPayload(&empty_msg2, sizeof (RssiArray)));
+	    rssiArray->nodeid = TOS_NODE_ID;
 	    for(i=0;i<5;i++)
 	    {
-	      btrpkt->rssi[i] = rssi[i];
+	      rssiArray->rssi[i] = rssi[i];
 	    }
-	    //call Packet.setPayloadLength(&msg, sizeof (RssiArray));
-            // call AMPacket.setDestination(&msg, 0);
-            // call AMPacket.setSource(&msg, TOS_NODE_ID);
-	     while(call RssiArraySend.send(0, &msg, sizeof(RssiArray)) != SUCCESS );
+	    
+	    call Packet.setPayloadLength(&empty_msg2, sizeof (RssiArray));
+            call AMPacket.setDestination(&empty_msg2, 0);
+            call AMPacket.setSource(&empty_msg2, TOS_NODE_ID);
+	    
+	    // MILIND: IF BASE STATION, then no need to send packet, but instead just send it over serial
+	    if(TOS_NODE_ID == 0)
+	    {
+	      //TODO FIX THIS!!!
+	      while(call UartStream.send((void *) rssiArray, sizeof(RssiArray)) != SUCCESS)
+	      return;
+	    }
+	    
+	    while(call RssiArraySend.send(0, &empty_msg2, sizeof(RssiArray)) != SUCCESS );	     
+	     
 	     call Leds.led1Toggle();	    
 	  }
 	  
-	   event void RssiArraySend.sendDone(message_t *m, error_t error){}
+	   event void RssiArraySend.sendDone(message_t *m, error_t error)
+	   {
+	      call RssiArraySendTimer.startOneShot(RSSI_ARRAY_INTERVAL_MS);
+	   }
 
 	////////*************************************************************************uart to radio section                        
 
@@ -295,7 +307,7 @@ implementation {
 		  if(TOS_NODE_ID == 0)
 		  {
 		    //I'm the base station, forward data onto serial
-		    while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
+		    // while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
 		  }
 		  
 		  
