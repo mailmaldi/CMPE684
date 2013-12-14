@@ -26,6 +26,8 @@ namespace SerialPortTest
 
         private RssiValues rssiValues = new RssiValues();
         Thread serialQParserThread;
+        Thread RobotMoveThread;
+        private volatile bool robotThreadRunning = false, robotThreadFinished = true;
 
         private byte[] newline = Encoding.ASCII.GetBytes(Environment.NewLine);
         //private static System.IO.FileStream file = new FileStream(dir + "\\test.txt", FileMode.Create);
@@ -80,6 +82,7 @@ namespace SerialPortTest
         private void OpenThePort(String portName)
         {
             serialQParserThread = new Thread(ParserMethod);
+            RobotMoveThread = new Thread(RobotMover);
             if (openButton.Text == "Open")
             {
                 try
@@ -87,11 +90,14 @@ namespace SerialPortTest
                     serialPort = new SerialPort(portNamesComboBox.SelectedItem.ToString(), 57600, Parity.None, 8, StopBits.One);
                     serialPort.Handshake = Handshake.None;
                     serialPort.DataReceived += new SerialDataReceivedEventHandler(serialPort_DataReceived);
-                    serialPort.ReadBufferSize = 20;
+                    serialPort.ReadBufferSize = 200;
                     serialPort.ErrorReceived += new SerialErrorReceivedEventHandler(serialPort_ErrorReceived);
                     serialPort.Open();
 
                     serialQParserThread.Start();
+                    RobotMoveThread.Start();
+                    robotThreadRunning = true;
+                    robotThreadFinished = false;
 
                     openButton.Text = "Close";
                     ButtonEnables(true);
@@ -109,6 +115,11 @@ namespace SerialPortTest
             {
                 try
                 {
+                    robotThreadRunning = false;
+                    while (robotThreadFinished != true)
+                        trysleep(1000);
+                    RobotMoveThread.Abort();
+                    //RobotMoveThread.Join();
                     serialPort.Close();
                     serialPort.Dispose();
                     serialQParserThread.Abort();
@@ -242,6 +253,13 @@ namespace SerialPortTest
                 MessageBox.Show("WHY");
         }
 
+        private void SendToSerial(byte cmd)
+        {
+            byte[] cmds = new byte[1];
+            cmds[0] = cmd;
+            SendToSerial(cmds);
+        }
+
         private void SendToSerial(byte[] cmds)
         {
             if (serialPort == null || !serialPort.IsOpen)
@@ -373,8 +391,8 @@ namespace SerialPortTest
                         //string hexstr = ByteArrayToHexString(buffer);
                         //Console.Out.WriteLine(hexstr);
 
-                    }
-                }
+                    }//End of if 0x45
+                }// End of if 0x7E
                 //Console.Out.Write(result + " ");
             }
 
@@ -413,7 +431,40 @@ namespace SerialPortTest
             //Console.Out.WriteLine(rssiValues.toString());
             //RssiValues.printMatrix(rssiValues.getRssiValuesMatrix());
             Class1.test(rssiValues.getRssiValuesMatrix());
+
             //TODO remove this
+        }
+
+        private void RobotMover()
+        {
+            //return;
+            Thread.Sleep(10000);
+            while (robotThreadRunning)
+            {
+                try
+                {
+                    SendToSerial(200); // sing
+
+                    SendToSerial(203); // forward
+                    trysleep(1000);
+                    SendToSerial(207); // stop
+                    trysleep(1000);
+                }
+                catch (Exception e) { }
+                finally
+                {
+                    robotThreadFinished = true;
+                }
+            }
+        }
+
+        private void trysleep(int millis)
+        {
+            try
+            {
+                Thread.Sleep(millis);
+            }
+            catch (Exception e) { }
         }
 
 
