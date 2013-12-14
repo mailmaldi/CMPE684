@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections.Concurrent;
 
 namespace SerialPortTest
 {
@@ -37,12 +38,12 @@ namespace SerialPortTest
     public class RssiValues
     {
         // key = value observed on node , value = list 
-        public Dictionary<int, List<RssiValue>> dictionary { get; set; }
+        public ConcurrentDictionary<int, List<RssiValue>> dictionary { get; set; }
         private int num_nodes = 5; // default 5 in the system, hardcoded since dhaval's functions are hardcoded
 
         public RssiValues(int num_nodes = 5)
         {
-            this.dictionary = new Dictionary<int, List<RssiValue>>();
+            this.dictionary = new ConcurrentDictionary<int, List<RssiValue>>();
             this.num_nodes = num_nodes;
         }
 

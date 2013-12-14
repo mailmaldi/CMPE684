@@ -411,6 +411,9 @@ namespace SerialPortTest
             rssiValues.setValuesForNode(nodeid, values, false);
 
             //Console.Out.WriteLine(rssiValues.toString());
+            //RssiValues.printMatrix(rssiValues.getRssiValuesMatrix());
+            Class1.test(rssiValues.getRssiValuesMatrix());
+            //TODO remove this
         }
 
 

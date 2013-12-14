@@ -7,13 +7,13 @@ namespace SerialPortTest
     {
         //public static int[][] matrix = new int[5][5];
 
-        public static void test()
+        public static void test(int[,] rssi)
         {
             Console.Out.WriteLine("Hello world");
             double[,] distancematrix = new double[5, 5];
             int onemeter = -7;
             double constant = 3.5;
-            int[,] rssi = new int[5, 5] { { 15, 12, 13, 14, 15 }, { 12, 13, 14, 15, 11 }, { 13, 14, 15, 11, 12 }, { 14, 15, 11, 12, 13 }, { 15, 14, 13, 12, 11 } };
+            //int[,] rssi = new int[5, 5] { { 15, 12, 13, 14, 15 }, { 12, 13, 14, 15, 11 }, { 13, 14, 15, 11, 12 }, { 14, 15, 11, 12, 13 }, { 15, 14, 13, 12, 11 } };
 
             Console.Out.Write("distance matrix ");
             for (int i = 0; i < 5; i++)
