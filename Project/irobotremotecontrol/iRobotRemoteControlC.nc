@@ -181,7 +181,7 @@ implementation {
 	      src = call AMPacket.source(&empty_msg2);
 	      call UartAMPacket.setSource(&empty_msg2, src);
 	      startRssiArrayTimer = TRUE;
-	      while(call UartSend.send[id](addr, &empty_msg2, len) != SUCCESS);
+	      while(call UartSend.send[AM_RSSIARR](addr, &empty_msg2, len) != SUCCESS);
 	      //TODO maybe run timer oneshot after serial xfer is done
 	      return;
 	    }
