@@ -33,6 +33,11 @@ module iRobotRemoteControlC {
 		interface Timer<TMilli> as RssiArraySendTimer;
 		interface AMSend as RssiArraySend;
 		interface Receive as RssiArrayReceive;
+		
+		interface AMSend as UartSend[am_id_t id];
+		//interface Receive as UartReceive[am_id_t id];
+		interface Packet as UartPacket;
+		interface AMPacket as UartAMPacket;
 
 	}
 }
@@ -42,6 +47,7 @@ implementation {
 	 message_t empty_msg;
 	 message_t empty_msg2;
 	 uint16_t rssi[5] = {0,0,0,0,0};
+	 bool startRssiArrayTimer = FALSE;
 
 	message_t radioQueueBufs[RADIO_QUEUE_LEN];
 	message_t * ONE_NOK radioQueue[RADIO_QUEUE_LEN];
@@ -149,6 +155,9 @@ implementation {
 	    //message_t msg;
 	    RssiArray * rssiArray;
 	    int i = 0;
+	    am_id_t id;
+	    am_addr_t addr, src;
+	    uint8_t len;
 	    
 	    rssiArray = (RssiArray*) (call Packet.getPayload(&empty_msg2, sizeof (RssiArray)));
 	    rssiArray->nodeid = TOS_NODE_ID;
@@ -165,11 +174,21 @@ implementation {
 	    if(TOS_NODE_ID == 0)
 	    {
 	      //TODO FIX THIS!!!
-	      while(call UartStream.send((void *) rssiArray, sizeof(RssiArray)) != SUCCESS)
+	      //while(call UartStream.send((void *) rssiArray, sizeof(RssiArray)) != SUCCESS)
+	      id = call AMPacket.type(&empty_msg2);
+	      addr = call AMPacket.destination(&empty_msg2);
+	      len = call Packet.payloadLength(&empty_msg2);
+	      src = call AMPacket.source(&empty_msg2);
+	      call UartAMPacket.setSource(&empty_msg2, src);
+	      startRssiArrayTimer = TRUE;
+	      while(call UartSend.send[id](addr, &empty_msg2, len) != SUCCESS);
+	      //TODO maybe run timer oneshot after serial xfer is done
 	      return;
 	    }
-	    
-	    while(call RssiArraySend.send(0, &empty_msg2, sizeof(RssiArray)) != SUCCESS );	     
+	    else
+	    {
+		while(call RssiArraySend.send(0, &empty_msg2, sizeof(RssiArray)) != SUCCESS );	    
+	    } 
 	     
 	     call Leds.led1Toggle();	    
 	  }
@@ -307,6 +326,7 @@ implementation {
 		  if(TOS_NODE_ID == 0)
 		  {
 		    //I'm the base station, forward data onto serial
+		    // This sends received RSSI values
 		    // while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
 		  }
 		  
@@ -319,6 +339,9 @@ implementation {
       {
 		
 		RssiArray *rssiArray;
+		am_id_t id;
+		am_addr_t addr, src;
+		uint8_t length;
 			
 		atomic 
 		{
@@ -329,7 +352,14 @@ implementation {
 		  if(TOS_NODE_ID == 0)
 		  {
 		    //I'm the base station, forward data onto serial
-		    while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);  
+		    // This forwards the received rssi arrays
+		    //while(call UartStream.send(payload,call Packet.payloadLength(msg)) != SUCCESS);
+		    id = call AMPacket.type(msg);
+		    addr = call AMPacket.destination(msg);
+		    length = call Packet.payloadLength(msg);
+		    src = call AMPacket.source(msg);
+		    call UartAMPacket.setSource(msg, src);
+		    while(call UartSend.send[id](addr, msg, length) != SUCCESS);
 		  }
 		}
 		return msg;
@@ -400,6 +430,21 @@ implementation {
 	    call SendTimer.startOneShot(SEND_INTERVAL_MS);
 	    call RssiArraySendTimer.startOneShot(RSSI_ARRAY_INTERVAL_MS);
 	}
+	
+	//This is for the AMSend for Uart
+	event void UartSend.sendDone[am_id_t id](message_t* msg, error_t error) 
+	{
+	  atomic
+	  {
+	      if(TOS_NODE_ID == 0 && startRssiArrayTimer == TRUE)
+	      {
+		startRssiArrayTimer = FALSE;
+		call RssiArraySendTimer.startOneShot(RSSI_ARRAY_INTERVAL_MS);
+	      }
+	  }
+	}
+	
+	
 }
 
 

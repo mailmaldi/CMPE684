@@ -42,7 +42,12 @@ App.RssiArraySend -> RssiArraySender;
 App.RssiArrayReceive -> RssiArrayReceiver.Receive;
 components new TimerMilliC() as RssiArraySendTimer;
 App.RssiArraySendTimer -> RssiArraySendTimer;
-	
+
+  App.UartSend -> Serial;
+  //App.UartReceive -> Serial;
+  App.UartPacket -> Serial;
+  App.UartAMPacket -> Serial;
+
 	App.Boot -> MainC.Boot;
 	App.Leds -> LedsC.Leds;
 	App.SerialControl -> Serial;
