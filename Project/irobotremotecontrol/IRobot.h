@@ -12,7 +12,9 @@ enum {
 	UART_QUEUE_LEN = 100,
 	RADIO_QUEUE_LEN = 20,
 	 SEND_INTERVAL_MS = 1000,
+	 RSSI_ARRAY_INTERVAL_MS = 1000,
 	 AM_RSSIMSG = 76,
+	 AM_RSSIARR = 77,
 };
 
 uint8_t SING_COMMAND[15] = {128,132,140,0,4,62,12,66,12,69,12,74,36,141,0} ; // 200
@@ -36,6 +38,11 @@ typedef nx_struct RssiMsg{
   nx_int16_t rssi;
   nx_uint16_t nodeid;
 } RssiMsg;
+
+typedef nx_struct RssiArray{
+  nx_uint16_t nodeid;
+  nx_uint16_t rssi[5];
+} RssiArray;
 
 
 #endif /* I_ROBOT_H */
