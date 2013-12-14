@@ -203,7 +203,7 @@ namespace SerialPortTest
             }
             else
             {
-                this.rawDataTextBox.Text = str + "\r\n" + this.rawDataTextBox.Text;
+                this.rawDataTextBox.Text += str + "\r\n" ;
             }
         }
 
@@ -333,7 +333,48 @@ namespace SerialPortTest
             while (true)
             {
                 byte result = serialQ.Take();
-                Console.Out.Write(result + " ");
+                if (result == 0x7E)
+                {
+                    result = serialQ.Take();
+                    if (result == 0x45)
+                    {
+                        byte[] buffer = new byte[50];
+                        int count = 0;
+                        while ((result = serialQ.Take()) != 0x7E)
+                        {
+                            if (result == 0x7D)
+                            {
+                                result = serialQ.Take();
+                                if (result == 0x5E)
+                                {
+                                    result = 0x7E;
+                                }
+                                else if (result == 0x5D)
+                                {
+                                    result = 0x7D;
+                                }
+                                else
+                                {
+                                    Console.Out.WriteLine("MALDI: 7D was not followed by 5E or 5D");
+                                }
+                            }
+                            buffer[count++] = result;
+                        }
+                        Console.Out.Write("RAW: ");
+                        for (int i = 0; i < count; i++ )
+                        {
+                            Console.Out.Write(buffer[i] + " ");
+                            file2.Write(buffer[i] + " ");
+                        }
+                        Console.Out.WriteLine();
+                        file2.WriteLine();
+                        file2.Flush();
+                        //string hexstr = ByteArrayToHexString(buffer);
+                        //Console.Out.WriteLine(hexstr);
+
+                    }
+                }
+                //Console.Out.Write(result + " ");
             }
 
         }
