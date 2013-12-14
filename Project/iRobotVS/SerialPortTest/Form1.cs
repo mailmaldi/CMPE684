@@ -21,6 +21,11 @@ namespace SerialPortTest
         private int currentReadNumber = 0;
         private byte[] sensorsData;
 
+        private static string dir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        private static byte[] newline = Encoding.ASCII.GetBytes(Environment.NewLine);
+        //private static System.IO.FileStream file = new FileStream(dir + "\\test.txt", FileMode.Create);
+        private static System.IO.StreamWriter file = new System.IO.StreamWriter( dir + "\\test.txt" );
+
         private delegate void AddItemCallBack(string str);
         private delegate void GUIRelatedUpdateCallBack(bool state);
 
@@ -116,7 +121,15 @@ namespace SerialPortTest
             int bytesCount = serialPort.BytesToRead;
             byte[] buffer = new byte[bytesCount];
             serialPort.Read(buffer, 0, bytesCount);
-            AddItem(ByteArrayToHexString(buffer));
+            //file.Write(buffer, 0, bytesCount);
+            //file.Write(newline, 0, newline.Length);
+
+            string hexStr = ByteArrayToHexString(buffer);
+
+            file.WriteLine(hexStr);
+            file.Flush();
+
+            AddItem(hexStr);
 
             if (this.cliffSensors)
             {
