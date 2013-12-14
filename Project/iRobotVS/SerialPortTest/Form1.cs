@@ -27,7 +27,7 @@ namespace SerialPortTest
         private RssiValues rssiValues = new RssiValues();
         Thread serialQParserThread;
         Thread RobotMoveThread;
-        private volatile bool robotThreadRunning = false, robotThreadFinished = true;
+        private volatile bool robotThreadRunning = false;
 
         private byte[] newline = Encoding.ASCII.GetBytes(Environment.NewLine);
         //private static System.IO.FileStream file = new FileStream(dir + "\\test.txt", FileMode.Create);
@@ -97,7 +97,6 @@ namespace SerialPortTest
                     serialQParserThread.Start();
                     RobotMoveThread.Start();
                     robotThreadRunning = true;
-                    robotThreadFinished = false;
 
                     openButton.Text = "Close";
                     ButtonEnables(true);
@@ -116,10 +115,18 @@ namespace SerialPortTest
                 try
                 {
                     robotThreadRunning = false;
-                    while (robotThreadFinished != true)
-                        trysleep(1000);
-                    RobotMoveThread.Abort();
-                    //RobotMoveThread.Join();
+                    try
+                    {
+                        RobotMoveThread.Abort();
+                    }
+                    catch (Exception e)
+                    {
+                        RobotMoveThread.Join();
+                    }
+                    
+                    SendToSerial(207);
+                    Thread.Sleep(5000);
+                    
                     serialPort.Close();
                     serialPort.Dispose();
                     serialQParserThread.Abort();
@@ -180,7 +187,7 @@ namespace SerialPortTest
             if (this.cliffButton.InvokeRequired)
             {
                 GUIRelatedUpdateCallBack d = new GUIRelatedUpdateCallBack(GUIRelatedUpdate);
-                this.Invoke(d, new object[] { state });
+                this.BeginInvoke(d, new object[] { state });
             }
             else
             {
@@ -210,7 +217,7 @@ namespace SerialPortTest
             if (this.rawDataTextBox.InvokeRequired)
             {
                 AddItemCallBack d = new AddItemCallBack(AddItem);
-                this.Invoke(d, new object[] { str });
+                this.BeginInvoke(d, new object[] { str });
             }
             else
             {
@@ -444,17 +451,18 @@ namespace SerialPortTest
                 try
                 {
                     SendToSerial(200); // sing
-
+                    trysleep(1000);
                     SendToSerial(203); // forward
                     trysleep(1000);
                     SendToSerial(207); // stop
+                    trysleep(2000);
+                    SendToSerial(204); // back
                     trysleep(1000);
+                    SendToSerial(207); // stop
+                    trysleep(2000);
                 }
                 catch (Exception e) { }
-                finally
-                {
-                    robotThreadFinished = true;
-                }
+                finally { }
             }
         }
 
