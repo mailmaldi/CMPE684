@@ -397,7 +397,7 @@ namespace SerialPortTest
         //TODO This is a bad function, parse more nicely please
         private void updateRssiList(byte[] buffer, int count)
         {
-            if(buffer[7] != 77)
+            if (buffer[7] != 77)
                 return;
 
             List<RssiValue> values = new List<RssiValue>();

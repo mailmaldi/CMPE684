@@ -42,11 +42,11 @@ namespace SerialPortTest
         public List<RssiValue> getValuesForNode(int nodeid)
         {
             List<RssiValue> value = null;
-            
+
             if (dictionary.TryGetValue(nodeid, out value))
             {
-                
-                Console.WriteLine("Found For key = ", nodeid , " value= {" , value.ToString() , "}");
+
+                Console.WriteLine("Found For key = ", nodeid, " value= {", value.ToString(), "}");
                 return value;
             }
             else
@@ -109,7 +109,7 @@ namespace SerialPortTest
             {
                 Console.Out.WriteLine("Exception on the following buffer");
                 Console.Out.WriteLine(buffer);
-                Console.Out.WriteLine( e.StackTrace);
+                Console.Out.WriteLine(e.StackTrace);
             }
         }
 
@@ -165,26 +165,26 @@ namespace SerialPortTest
 
             if (targets.Count == 0)
                 return returnVal;
-            
+
             if (this.current_target != -1)
-                return this.current_target;            
-            
+                return this.current_target;
+
             //TODO write a function that will iterate through all the elements of the HashSet and find the node that is closest to bot and return it
             foreach (int i in targets)
             {
                 returnVal = i;
                 break;
-                
+
             }
             this.current_target = returnVal;
             return returnVal;
-                
+
         }
 
         public string toString()
         {
-            string str = "current_target="+this.current_target+ " targets={";
-            foreach (int i in targets) 
+            string str = "current_target=" + this.current_target + " targets={";
+            foreach (int i in targets)
                 str += i + " ";
             str += "}";
             return str;
@@ -200,7 +200,7 @@ namespace SerialPortTest
     {
         public static void testfunction()
         {
-                       List<RssiValue> mylist = new List<RssiValue>();
+            List<RssiValue> mylist = new List<RssiValue>();
             RssiValue val1 = new RssiValue(1, 28);
             RssiValue val2 = new RssiValue(0, 20);
             mylist.Add(val1);
