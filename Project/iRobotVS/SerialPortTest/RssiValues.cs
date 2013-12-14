@@ -37,7 +37,15 @@ namespace SerialPortTest
     public class RssiValues
     {
         // key = value observed on node , value = list 
-        private Dictionary<int, List<RssiValue>> dictionary = new Dictionary<int, List<RssiValue>>();
+        public Dictionary<int, List<RssiValue>> dictionary { get; set; }
+        private int num_nodes = 5; // default 5 in the system, hardcoded since dhaval's functions are hardcoded
+
+        public RssiValues(int num_nodes = 5)
+        {
+            this.dictionary = new Dictionary<int, List<RssiValue>>();
+            this.num_nodes = num_nodes;
+        }
+
 
         public List<RssiValue> getValuesForNode(int nodeid)
         {
@@ -98,21 +106,6 @@ namespace SerialPortTest
             }
         }
 
-        public void parseFrameAndUpdate(byte[] buffer, int bytesCount)
-        {
-            Console.Out.WriteLine("MALDI: Starting to parse bytes");
-            try
-            {
-
-            }
-            catch (Exception e)
-            {
-                Console.Out.WriteLine("Exception on the following buffer");
-                Console.Out.WriteLine(buffer);
-                Console.Out.WriteLine(e.StackTrace);
-            }
-        }
-
         public string toString()
         {
             string str = "";
@@ -129,6 +122,36 @@ namespace SerialPortTest
                 str += "}\n";
             }
             return str;
+        }
+
+        // Assumes ALL NODES are in incremental order i.e. 0,1,2,3... and no skipping in between i.e. no 0,1,3,5,...
+        // Assumes that in dictionary, the value will be a list of all indices loaded i.e. 0,1,2,3...
+        public int[,] getRssiValuesMatrix()
+        {
+            int[,] returnMatrix = new int[5, 5];
+
+            foreach (var pair in dictionary)
+            {
+                foreach (RssiValue item in pair.Value)
+                {
+                    returnMatrix[pair.Key, item.nodeid] = (pair.Key == item.nodeid) ? 1000 : (int)item.value;
+                    //TODO DHAVAL TO USE THIS FOR HIS HARDCODED CLASS
+                }
+            }
+            return returnMatrix;
+        }
+
+        public static void printMatrix(int[,] matrix)
+        {
+            for (int i = 0; i < matrix.GetLength(0); i++)
+            {
+                for (int j = 0; j < matrix.GetLength(1); j++)
+                {
+                    int s = matrix[i, j];
+                    Console.Write(s + " ");
+                }
+                Console.WriteLine();
+            }
         }
 
     }
@@ -246,6 +269,11 @@ namespace SerialPortTest
             targetQ.removeTarget(0);
             Console.Out.WriteLine("current_target:" + targetQ.getTarget());
             Console.Out.WriteLine(targetQ.toString());
+
+            int[,] matrix = { { 1, 2, 11 }, { 3, 4, 12 }, { 5, 6, 13 }, { 7, 8, 14 }, { 9, 10, 15 } };
+            RssiValues.printMatrix(matrix);
+            matrix = values.getRssiValuesMatrix();
+            RssiValues.printMatrix(matrix);
 
         }
 
