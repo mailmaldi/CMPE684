@@ -307,6 +307,9 @@ implementation {
 							case 207:
 								while(call UartStream.send(STOP_COMMAND,7) != SUCCESS);
 							break;
+							case 208:
+								while(call UartStream.send(FORWARD_COMMAND_DHAVAL,7) != SUCCESS);
+							break;
 							default:
 							break;
 						}

@@ -27,6 +27,7 @@ uint8_t BACK_COMMAND[7] = {128,131,137,0xFF,0x06,0x7F,0xFF}; // 204
 uint8_t LEFT_COMMAND[7] = {128,131,137,0x00,0x64,0x00,0x01}; // 205
 uint8_t RIGHT_COMMAND[7] = {128,131,137,0x00,0x64,0xFF,0xFF}; // 206
 uint8_t STOP_COMMAND[7] = {128,131,137,0x0,0x0,0x0,0x0}; // 207
+uint8_t FORWARD_COMMAND_DHAVAL[7] = {128,131,137,0x00,0xFA,0x7F,0xFF}; // 208 MILIND: adding dhaval's command, hopefully will work
 
 #define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
 
