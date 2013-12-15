@@ -174,6 +174,8 @@ namespace SerialPortTest
         public void addTarget(int nodeid)
         {
             targets.Add(nodeid);
+            if (current_target == -1)
+                current_target = nodeid;
         }
 
         public void removeTarget(int nodeid)

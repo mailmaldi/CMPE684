@@ -25,6 +25,7 @@ namespace SerialPortTest
         private byte[] sensorsData;
 
         private RssiValues rssiValues = new RssiValues();
+        TargetQueue targetQueue = new TargetQueue();
         Thread serialQParserThread;
         Thread RobotMoveThread;
         private volatile bool robotThreadRunning = false;
@@ -123,10 +124,10 @@ namespace SerialPortTest
                     {
                         RobotMoveThread.Join();
                     }
-                    
+
                     SendToSerial(207);
                     Thread.Sleep(5000);
-                    
+
                     serialPort.Close();
                     serialPort.Dispose();
                     serialQParserThread.Abort();
@@ -380,18 +381,18 @@ namespace SerialPortTest
                                 }
                                 else
                                 {
-                                    Console.Out.WriteLine("MALDI: 7D was not followed by 5E or 5D");
+                                    Console.Out.WriteLine("MILIND: 7D was not followed by 5E or 5D");
                                 }
                             }
                             buffer[count++] = result;
                         }
-                        Console.Out.Write("RAW: ");
+                        //Console.Out.Write("RAW: ");
                         for (int i = 0; i < count; i++)
                         {
-                            Console.Out.Write(buffer[i] + " ");
+                            //Console.Out.Write(buffer[i] + " ");
                             file2.Write(buffer[i] + " ");
                         }
-                        Console.Out.WriteLine();
+                        //Console.Out.WriteLine();
                         file2.WriteLine();
                         file2.Flush();
                         parseFrame(buffer, count);
@@ -413,8 +414,11 @@ namespace SerialPortTest
                 case 77:
                     updateRssiList(buffer, count);
                     break;
+                case 78:
+                    updateTargetQueue(buffer, count);
+                    break;
                 default:
-                    Console.Out.WriteLine("MALDI: NO GROUP ID IN PREVIOUS BUFFER!");
+                    Console.Out.WriteLine("MILIND: NO GROUP ID IN PREVIOUS BUFFER!");
                     break;
             }
         }
@@ -437,9 +441,31 @@ namespace SerialPortTest
 
             //Console.Out.WriteLine(rssiValues.toString());
             //RssiValues.printMatrix(rssiValues.getRssiValuesMatrix());
-            Class1.test(rssiValues.getRssiValuesMatrix());
+            //Class1.test(rssiValues.getRssiValuesMatrix());
 
             //TODO remove this
+        }
+
+        private void updateTargetQueue(byte[] buffer, int count)
+        {
+            if (buffer[7] != 78)
+                return;
+            int nodeid = buffer[9];
+
+            byte[] bytes = { buffer[11], buffer[10] };
+            int i = BitConverter.ToInt16(bytes, 0);
+
+            Console.Out.WriteLine("BEFORE: "+ targetQueue.toString());
+            if (i > 950)
+            {
+                targetQueue.addTarget(nodeid);
+                Console.Out.WriteLine("MILIND: ADDING NODE {0} AS TARGET SINCE EVENT VALUE {1}", nodeid, i);
+                Console.Out.WriteLine("AFTER: "+ targetQueue.toString());
+            }
+            else
+            {
+                Console.Out.WriteLine("MILIND: NOT ADDING NODE {0} AS TARGET SINCE EVENT VALUE {1}", nodeid, i);
+            }
         }
 
         private void RobotMover()
