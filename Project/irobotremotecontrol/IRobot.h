@@ -15,6 +15,8 @@ enum {
 	 RSSI_ARRAY_INTERVAL_MS = 1000,
 	 AM_RSSIMSG = 76,
 	 AM_RSSIARR = 77,
+	 AM_SENSOR = 78,
+	 SENSOR_READ_INTERVAL_MS = 1000,
 };
 
 uint8_t SING_COMMAND[15] = {128,132,140,0,4,62,12,66,12,69,12,74,36,141,0} ; // 200
@@ -43,6 +45,11 @@ typedef nx_struct RssiArray{
   nx_uint16_t nodeid;
   nx_uint16_t rssi[5];
 } RssiArray;
+
+typedef nx_struct SensorMsg{
+  nx_uint16_t nodeid;
+  nx_uint16_t data;
+} SensorMsg;
 
 
 #endif /* I_ROBOT_H */

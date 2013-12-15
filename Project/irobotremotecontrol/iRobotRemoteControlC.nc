@@ -38,6 +38,12 @@ module iRobotRemoteControlC {
 		//interface Receive as UartReceive[am_id_t id];
 		interface Packet as UartPacket;
 		interface AMPacket as UartAMPacket;
+		
+		//Sensor stuff
+		interface Read<uint16_t>;
+		interface Timer<TMilli> as SensorReadTimer;
+		interface AMSend as SensorSend;
+		interface Receive as SensorReceive;
 
 	}
 }
@@ -48,6 +54,7 @@ implementation {
 	 message_t empty_msg2;
 	 uint16_t rssi[5] = {0,0,0,0,0};
 	 bool startRssiArrayTimer = FALSE;
+	 message_t empty_senso_msg;
 
 	message_t radioQueueBufs[RADIO_QUEUE_LEN];
 	message_t * ONE_NOK radioQueue[RADIO_QUEUE_LEN];
@@ -429,6 +436,9 @@ implementation {
 	//For sending rssi
 	    call SendTimer.startOneShot(SEND_INTERVAL_MS);
 	    call RssiArraySendTimer.startOneShot(RSSI_ARRAY_INTERVAL_MS);
+	    
+	    if(TOS_NODE_ID != 0 && TOS_NODE_ID != 1)
+	      call SensorReadTimer.startOneShot(SENSOR_READ_INTERVAL_MS);
 	}
 	
 	//This is for the AMSend for Uart
@@ -444,7 +454,56 @@ implementation {
 	  }
 	}
 	
+	event void SensorReadTimer.fired() 
+	{
+	  call Read.read();
+	}
 	
+	event void Read.readDone(error_t result, uint16_t data) 
+	{
+	  SensorMsg * msg;
+	  if (result == SUCCESS && data > 950)
+	  {
+	      msg = (SensorMsg*) (call Packet.getPayload(&empty_senso_msg, sizeof (SensorMsg)));
+	      msg->nodeid = TOS_NODE_ID;
+	      msg->data = data;
+	      
+	      call Packet.setPayloadLength(&empty_senso_msg, sizeof (SensorMsg));
+	      call AMPacket.setDestination(&empty_senso_msg, 0);
+	      call AMPacket.setSource(&empty_senso_msg, TOS_NODE_ID);
+	      
+	      while(call SensorSend.send(0, &empty_senso_msg, sizeof(SensorMsg)) != SUCCESS );	    
+	   }
+	   else
+	     call SensorReadTimer.startOneShot(SENSOR_READ_INTERVAL_MS);
+	}//End event readDone
+	
+	event void SensorSend.sendDone(message_t *m, error_t error)
+	  {
+	    call SensorReadTimer.startOneShot(SENSOR_READ_INTERVAL_MS);
+	  }
+	  
+	event message_t * SensorReceive.receive(message_t * msg, void * payload,uint8_t len) 
+	{
+		am_id_t id;
+		am_addr_t addr, src;
+		uint8_t length;
+			
+		atomic 
+		{		  
+		  if(TOS_NODE_ID == 0)
+		  {
+		    //I'm the base station, forward data onto serial
+		    id = call AMPacket.type(msg);
+		    addr = call AMPacket.destination(msg);
+		    length = call Packet.payloadLength(msg);
+		    src = call AMPacket.source(msg);
+		    call UartAMPacket.setSource(msg, src);
+		    while(call UartSend.send[id](addr, msg, length) != SUCCESS);
+		  }
+		}
+		return msg;
+	}
 }
 
 

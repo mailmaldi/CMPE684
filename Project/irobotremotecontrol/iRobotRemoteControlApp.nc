@@ -43,6 +43,15 @@ App.RssiArrayReceive -> RssiArrayReceiver.Receive;
 components new TimerMilliC() as RssiArraySendTimer;
 App.RssiArraySendTimer -> RssiArraySendTimer;
 
+components new PhotoC() as Sensor;
+App.Read->Sensor;
+components new TimerMilliC() as SensorReadTimer;
+App.SensorReadTimer -> SensorReadTimer;
+components new AMSenderC(AM_SENSOR) as SensorSender;
+components new AMReceiverC(AM_SENSOR) as SensorReceiver;
+App.SensorSend -> SensorSender;
+App.SensorReceive -> SensorReceiver.Receive;
+
   App.UartSend -> Serial;
   //App.UartReceive -> Serial;
   App.UartPacket -> Serial;
