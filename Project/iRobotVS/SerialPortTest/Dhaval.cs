@@ -15,30 +15,25 @@ namespace SerialPortTest
             double constant = 3.5;
             //int[,] rssi = new int[5, 5] { { 15, 12, 13, 14, 15 }, { 12, 13, 14, 15, 11 }, { 13, 14, 15, 11, 12 }, { 14, 15, 11, 12, 13 }, { 15, 14, 13, 12, 11 } };
 
-            Console.Out.Write("distance matrix ");
+            Console.Out.WriteLine("distance matrix:");
             for (int i = 0; i < 5; i++)
             {
-                Console.Out.WriteLine("\n");
-
                 for (int j = 0; j < 5; j++)
                 {
                     if (i == j)
                     {
                         distancematrix[i, j] = 1000;
-                        Console.Out.Write(distancematrix[i, j] + " ");
                     }
-
                     else
                     {
                         double temp1 = 3 * (rssi[i, j] - 1);
                         double temp2 = temp1 - 91;
                         double temp3 = (onemeter - temp2) / (10*constant);
                         distancematrix[i, j] = Math.Pow(10,temp3);
-
-                        Console.Out.Write(distancematrix[i, j] + " ");
                     }
-
+                    Console.Out.Write(distancematrix[i, j] + " ");
                 }
+                Console.Out.WriteLine();
             }
 
             double[,] coordinates = new double[5, 2];
@@ -77,12 +72,12 @@ namespace SerialPortTest
                 }
             }
 
-            Console.Out.WriteLine("Theta");
+            Console.Out.WriteLine("Theta:");
             for (int i = 0; i < 5; i++)
             {
-                Console.Out.WriteLine("\n");
                 Console.Out.Write(theta[i] + " ");
             }
+            Console.Out.WriteLine();
 
             for (int i = 0; i < 5; i++)
             {
