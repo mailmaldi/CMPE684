@@ -66,7 +66,7 @@ namespace SerialPortTest
                 else
                 {
                     double temp1 = Math.Pow(distancematrix[0, 2], 2) + Math.Pow(distancematrix[0, i], 2) - Math.Pow(distancematrix[2, i], 2);
-                    double temp2 = temp1 / (2 * distancematrix[0, 2] * distancematrix[0, 1]);
+                    double temp2 = temp1 / (2 * distancematrix[0, 2] * distancematrix[0, i]);
                     theta[i] = Math.Acos(temp2);
 
                 }
