@@ -7,7 +7,7 @@ namespace SerialPortTest
     {
         //public static int[][] matrix = new int[5][5];
 
-        public static void test(int[,] rssi)
+        public static double[,] test(int[,] rssi)
         {
             Console.Out.WriteLine("Hello world");
             double[,] distancematrix = new double[5, 5];
@@ -96,17 +96,10 @@ namespace SerialPortTest
                     coordinates[i, 1] = Math.Sin(theta[i]) * distancematrix[0, i];
                 }
             }
-            for (int i = 0; i < 5; i++)
-            {
-                Console.Out.WriteLine("\n");
-                for (int j = 0; j < 2; j++)
-                {
-                    Console.Out.Write(coordinates[i, j] + " ");
-                }
-            }
-
+            
+            return coordinates;
+            
         }
 
     }
 }
-

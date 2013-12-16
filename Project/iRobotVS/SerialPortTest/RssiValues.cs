@@ -277,7 +277,7 @@ namespace SerialPortTest
             RssiValues.printMatrix(matrix);
             matrix = values.getRssiValuesMatrix();
             RssiValues.printMatrix(matrix);
-
+            Class1.test(matrix);
         }
 
     }
