@@ -15,7 +15,6 @@ namespace SerialPortTest
         {
 
             Test.testfunction();
-           
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

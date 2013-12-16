@@ -455,12 +455,12 @@ namespace SerialPortTest
             byte[] bytes = { buffer[11], buffer[10] };
             int i = BitConverter.ToInt16(bytes, 0);
 
-            Console.Out.WriteLine("BEFORE: "+ targetQueue.toString());
+            Console.Out.WriteLine("BEFORE: " + targetQueue.toString());
             if (i > 950)
             {
                 targetQueue.addTarget(nodeid);
                 Console.Out.WriteLine("MILIND: ADDING NODE {0} AS TARGET SINCE EVENT VALUE {1}", nodeid, i);
-                Console.Out.WriteLine("AFTER: "+ targetQueue.toString());
+                Console.Out.WriteLine("AFTER: " + targetQueue.toString());
             }
             else
             {
@@ -484,13 +484,14 @@ namespace SerialPortTest
                     int[,] rssi = rssiValues.getRssiValuesMatrix();
                     double[,] distMatrix = Class1.test(rssi); //I get the complete distance matrix
                     Console.Out.WriteLine("The distance Matrix is as follows:\n");
+
                     for (int i = 0; i < 5; i++)
                     {
-                        Console.Out.WriteLine("\n");
                         for (int j = 0; j < 2; j++)
                         {
                             Console.Out.Write(distMatrix[i, j] + " ");
                         }
+                        Console.Out.WriteLine("\n");
                     }
                     for (int i = 0; i < 5; i++)
                     {
@@ -547,8 +548,8 @@ namespace SerialPortTest
                             Console.Out.Write(distanceToTravel[i, j] + " ");
                         }
                     }
-            
-            
+
+
                     // I'm assuming that the robot is facing towards the target when the event is detected!
                     //if Y co-ordinate is zero
                     if (distanceToTravel[0, 0] != 0 && distanceToTravel[0, 1] == 0)
@@ -637,7 +638,6 @@ namespace SerialPortTest
             }
             catch (Exception e) { }
         }
-
 
     }
 }

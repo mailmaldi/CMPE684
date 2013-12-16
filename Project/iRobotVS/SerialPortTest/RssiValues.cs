@@ -155,6 +155,18 @@ namespace SerialPortTest
             }
         }
 
+        private static void printMatrix(double[,] matrix)
+        {
+            var rowCount = matrix.GetLength(0);
+            var colCount = matrix.GetLength(1);
+            for (int row = 0; row < rowCount; row++)
+            {
+                for (int col = 0; col < colCount; col++)
+                    Console.Write(String.Format("{0}\t", matrix[row, col]));
+                Console.WriteLine();
+            }
+        }
+
     }
     /*End of class RssiValues */
 
