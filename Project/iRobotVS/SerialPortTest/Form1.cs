@@ -471,133 +471,149 @@ namespace SerialPortTest
         private void RobotMover()
         {
             //return;
-            Thread.Sleep(20000);
+            Thread.Sleep(15000);
             while (robotThreadRunning)
             {
                 try
                 {
+                    Thread.Sleep(2000);
                     double[,] distanceToTravel = new double[1, 2];
                     double[,] targetCoordinates = new double[1, 2];//Get the target co=ordinates { { 100, 105 } };
                     double[,] robotCoordinates = new double[1, 2];//Get the Robot co-ordinates { { 35, 45 } };
                     int targetNodeid = targetQueue.getTarget();
-                    Console.Out.WriteLine("Target node id is:" + targetNodeid + "\n");
-                    int[,] rssi = rssiValues.getRssiValuesMatrix();
-                    double[,] distMatrix = Class1.test(rssi); //I get the complete distance matrix
-                    Console.Out.WriteLine("The distance Matrix is as follows:\n");
-
-                    for (int i = 0; i < 5; i++)
+                    if (targetNodeid != 0)
                     {
-                        for (int j = 0; j < 2; j++)
+                        Console.Out.WriteLine("Target node id is:" + targetNodeid + "\n");
+                        Console.Out.WriteLine("The rssi Matrix is as follows:\n");
+                        int[,] rssi = rssiValues.getRssiValuesMatrix();
+                        for (int i = 0; i < 5; i++)
                         {
-                            Console.Out.Write(distMatrix[i, j] + " ");
+                            for (int j = 0; j < 5; j++)
+                            {
+                                Console.Out.Write(rssi[i, j] + " ");
+                            }
+                            Console.Out.WriteLine("\n");
                         }
-                        Console.Out.WriteLine("\n");
-                    }
-                    for (int i = 0; i < 5; i++)
-                    {
-                        if (targetNodeid == i)
+
+                        double[,] distMatrix = Class1.test(rssi); //I get the complete distance matrix
+                        Console.Out.WriteLine("The distance Matrix is as follows:\n");
+                        for (int i = 0; i < 5; i++)
                         {
                             for (int j = 0; j < 2; j++)
                             {
-                                targetCoordinates[0, j] = distMatrix[i, j];
+                                Console.Out.Write(distMatrix[i, j] + " ");
                             }
+                            Console.Out.WriteLine("\n");
                         }
-                        else if (i == 1)
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (targetNodeid == i)
+                            {
+                                for (int j = 0; j < 2; j++)
+                                {
+                                    targetCoordinates[0, j] = distMatrix[i, j];
+                                }
+                            }
+                            else if (i == 1)
+                            {
+                                for (int j = 0; j < 2; j++)
+                                {
+                                    robotCoordinates[0, j] = distMatrix[i, j];
+                                }
+                            }
+
+                        }
+                        Console.Out.WriteLine("\n");
+                        Console.Out.WriteLine("The target Matrix is as follows:\n");
+                        for (int i = 0; i < 1; i++)
                         {
                             for (int j = 0; j < 2; j++)
                             {
-                                robotCoordinates[0, j] = distMatrix[i, j];
+                                Console.Out.Write(targetCoordinates[i, j] + " ");
+                            }
+                            Console.Out.WriteLine("\n");
+                        }
+                        Console.Out.WriteLine("\n");
+                        Console.Out.WriteLine("The robot Matrix is as follows:\n");
+                        for (int i = 0; i < 1; i++)
+                        {
+                            //Console.Out.WriteLine("\n");
+                            for (int j = 0; j < 2; j++)
+                            {
+                                Console.Out.Write(robotCoordinates[i, j] + " ");
+                            }
+                            Console.Out.WriteLine("\n");
+                        }
+                        for (int i = 0; i < 1; i++)
+                        {
+                            for (int j = 0; j < 2; j++)
+                            {
+                                distanceToTravel[i, j] = targetCoordinates[i, j] - robotCoordinates[i, j];
                             }
                         }
-
-                    }
-                    Console.Out.WriteLine("\n");
-                    Console.Out.WriteLine("The target Matrix is as follows:\n");
-                    for (int i = 0; i < 1; i++)
-                    {
                         Console.Out.WriteLine("\n");
-                        for (int j = 0; j < 2; j++)
+                        Console.Out.WriteLine("Distance to Travel array is:\n");
+                        for (int i = 0; i < 1; i++)
                         {
-                            Console.Out.Write(targetCoordinates[i, j] + " ");
+                            //Console.Out.WriteLine("\n");
+                            for (int j = 0; j < 2; j++)
+                            {
+                                Console.Out.Write(distanceToTravel[i, j] + " ");
+                            }
+                            Console.Out.WriteLine("\n");
                         }
-                    }
-                    Console.Out.WriteLine("\n");
-                    Console.Out.WriteLine("The robot Matrix is as follows:\n");
-                    for (int i = 0; i < 1; i++)
-                    {
-                        Console.Out.WriteLine("\n");
-                        for (int j = 0; j < 2; j++)
-                        {
-                            Console.Out.Write(robotCoordinates[i, j] + " ");
-                        }
-                    }
-                    for (int i = 0; i < 1; i++)
-                    {
-                        for (int j = 0; j < 2; j++)
-                        {
-                            distanceToTravel[i, j] = targetCoordinates[i, j] - robotCoordinates[i, j];
-                        }
-                    }
-                    Console.Out.WriteLine("\n");
-                    Console.Out.WriteLine("Distance to Travel array is:\n");
-                    for (int i = 0; i < 1; i++)
-                    {
-                        Console.Out.WriteLine("\n");
-                        for (int j = 0; j < 2; j++)
-                        {
-                            Console.Out.Write(distanceToTravel[i, j] + " ");
-                        }
-                    }
 
 
-                    // I'm assuming that the robot is facing towards the target when the event is detected!
-                    //if Y co-ordinate is zero
-                    if (distanceToTravel[0, 0] != 0 && distanceToTravel[0, 1] == 0)
-                    {
-                        Console.Out.WriteLine("in first!\n");
-                        SendToSerial(200);
-                        moveStraight(distanceToTravel[0, 0]);
-                        SendToSerial(200);
-                    }
-                    //if X co-ordinate is zero
-                    else if (distanceToTravel[0, 0] == 0 && distanceToTravel[0, 1] != 0)
-                    {
-                        Console.Out.WriteLine("in second!\n");
-                        SendToSerial(200);
-                        moveStraight(distanceToTravel[0, 1]);
-                        SendToSerial(200);
-                    }
-                    //if none of them are zero
-                    else if (distanceToTravel[0, 0] != 0 && distanceToTravel[0, 1] != 0)
-                    {
-                        Console.Out.WriteLine("in third!\n");
-                        SendToSerial(200);
-                        moveStraight(distanceToTravel[0, 0]);
-                        if (distanceToTravel[0, 1] > 0)
+                        // I'm assuming that the robot is facing towards the target when the event is detected!
+                        //if Y co-ordinate is zero
+                        if (distanceToTravel[0, 0] != 0 && distanceToTravel[0, 1] == 0)
                         {
-                            turnRight90();
+                            Console.Out.WriteLine("in first!\n");
+                            SendToSerial(200);
+                            moveStraight(distanceToTravel[0, 0]);
+                            SendToSerial(200);
                         }
-                        else
+                        //if X co-ordinate is zero
+                        else if (distanceToTravel[0, 0] == 0 && distanceToTravel[0, 1] != 0)
                         {
-                            turnLeft90();
+                            Console.Out.WriteLine("in second!\n");
+                            SendToSerial(200);
+                            moveStraight(distanceToTravel[0, 1]);
+                            SendToSerial(200);
                         }
-                        moveStraight(distanceToTravel[0, 1]);
-                        SendToSerial(200);
+                        //if none of them are zero
+                        else if (distanceToTravel[0, 0] != 0 && distanceToTravel[0, 1] != 0)
+                        {
+                            Console.Out.WriteLine("in third!\n");
+                            SendToSerial(200);
+                            moveStraight(distanceToTravel[0, 0]);
+                            if (distanceToTravel[0, 1] > 0)
+                            {
+                                turnRight90();
+                            }
+                            else
+                            {
+                                turnLeft90();
+                            }
+                            moveStraight(distanceToTravel[0, 1]);
+                            SendToSerial(200);
+                        }
+                        //SendToSerial(200); // sing
+                        //trysleep(1000);
+                        //SendToSerial(203); // forward
+                        //trysleep(1000);
+                        //SendToSerial(207); // stop
+                        //trysleep(2000);
+                        //SendToSerial(204); // back
+                        //trysleep(1000);
+                        //SendToSerial(207); // stop
+                        //trysleep(2000);
+                        break;
                     }
-                    //SendToSerial(200); // sing
-                    //trysleep(1000);
-                    //SendToSerial(203); // forward
-                    //trysleep(1000);
-                    //SendToSerial(207); // stop
-                    //trysleep(2000);
-                    //SendToSerial(204); // back
-                    //trysleep(1000);
-                    //SendToSerial(207); // stop
-                    //trysleep(2000);
-                    break;
                 }
                 catch (Exception e) { }
                 finally { }
+                //robotThreadRunning = false;
             }
         }
 
