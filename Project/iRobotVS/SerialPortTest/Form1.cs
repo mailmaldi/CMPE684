@@ -437,7 +437,7 @@ namespace SerialPortTest
             values.Add(new RssiValue(3, buffer[17]));
             values.Add(new RssiValue(4, buffer[19]));
 
-            rssiValues.setValuesForNode(nodeid, values, false);
+            rssiValues.setValuesForNode(nodeid, values, true);
 
             //Console.Out.WriteLine(rssiValues.toString());
             //RssiValues.printMatrix(rssiValues.getRssiValuesMatrix());
@@ -476,35 +476,22 @@ namespace SerialPortTest
             {
                 try
                 {
-                    Thread.Sleep(2000);
                     double[,] distanceToTravel = new double[1, 2];
                     double[,] targetCoordinates = new double[1, 2];//Get the target co=ordinates { { 100, 105 } };
                     double[,] robotCoordinates = new double[1, 2];//Get the Robot co-ordinates { { 35, 45 } };
                     int targetNodeid = targetQueue.getTarget();
-                    if (targetNodeid != 0)
+                    if (targetNodeid != -1)
                     {
+                        Console.Out.WriteLine("RSSI VALUES DICTIONARY:\n" + rssiValues.toString());
                         Console.Out.WriteLine("Target node id is:" + targetNodeid + "\n");
                         Console.Out.WriteLine("The rssi Matrix is as follows:\n");
                         int[,] rssi = rssiValues.getRssiValuesMatrix();
-                        for (int i = 0; i < 5; i++)
-                        {
-                            for (int j = 0; j < 5; j++)
-                            {
-                                Console.Out.Write(rssi[i, j] + " ");
-                            }
-                            Console.Out.WriteLine("\n");
-                        }
+                        RssiValues.printMatrix(rssi);
 
                         double[,] distMatrix = Class1.test(rssi); //I get the complete distance matrix
-                        Console.Out.WriteLine("The distance Matrix is as follows:\n");
-                        for (int i = 0; i < 5; i++)
-                        {
-                            for (int j = 0; j < 2; j++)
-                            {
-                                Console.Out.Write(distMatrix[i, j] + " ");
-                            }
-                            Console.Out.WriteLine("\n");
-                        }
+                        Console.Out.WriteLine("The coordinates are as follows:\n");
+                        RssiValues.printMatrix(distMatrix);
+
                         for (int i = 0; i < 5; i++)
                         {
                             if (targetNodeid == i)
@@ -523,53 +510,79 @@ namespace SerialPortTest
                             }
 
                         }
-                        Console.Out.WriteLine("\n");
-                        Console.Out.WriteLine("The target Matrix is as follows:\n");
-                        for (int i = 0; i < 1; i++)
+
+
+                        Console.Out.WriteLine("The target coordinates is as follows:\n");
+
+                        for (int j = 0; j < 2; j++)
                         {
-                            for (int j = 0; j < 2; j++)
-                            {
-                                Console.Out.Write(targetCoordinates[i, j] + " ");
-                            }
-                            Console.Out.WriteLine("\n");
+                            Console.Out.WriteLine(targetCoordinates[0, j] + " ");
                         }
-                        Console.Out.WriteLine("\n");
-                        Console.Out.WriteLine("The robot Matrix is as follows:\n");
-                        for (int i = 0; i < 1; i++)
+
+
+                        Console.Out.WriteLine("The robot coordinates is as follows:\n");
+
+                        for (int j = 0; j < 2; j++)
                         {
-                            //Console.Out.WriteLine("\n");
-                            for (int j = 0; j < 2; j++)
-                            {
-                                Console.Out.Write(robotCoordinates[i, j] + " ");
-                            }
-                            Console.Out.WriteLine("\n");
+                            Console.Out.WriteLine(robotCoordinates[0, j] + " ");
                         }
-                        for (int i = 0; i < 1; i++)
+
+
+                        for (int j = 0; j < 2; j++)
                         {
-                            for (int j = 0; j < 2; j++)
-                            {
-                                distanceToTravel[i, j] = targetCoordinates[i, j] - robotCoordinates[i, j];
-                            }
+                            distanceToTravel[0, j] = targetCoordinates[0, j] - robotCoordinates[0, j];
                         }
+
                         Console.Out.WriteLine("\n");
                         Console.Out.WriteLine("Distance to Travel array is:\n");
-                        for (int i = 0; i < 1; i++)
+
+                        for (int j = 0; j < 2; j++)
                         {
-                            //Console.Out.WriteLine("\n");
-                            for (int j = 0; j < 2; j++)
-                            {
-                                Console.Out.Write(distanceToTravel[i, j] + " ");
-                            }
-                            Console.Out.WriteLine("\n");
+                            Console.Out.WriteLine(distanceToTravel[0, j] + " ");
                         }
 
+                        if (distanceToTravel[0, 0] > 0)
+                        {
+                            SendToSerial(200);
+                            turnRight90();
+                            moveStraight(distanceToTravel[0, 0]);
+                            turnLeft90();
+                            SendToSerial(200);
+                        }
+                        else
+                        {
+                            SendToSerial(200);
+                            turnLeft90();
+                            moveStraight(distanceToTravel[0, 0]);
+                            turnRight90();
+                            SendToSerial(200);
+                        }
 
+                        if (distanceToTravel[0, 1] > 0)
+                        {
+                            SendToSerial(200);
+                            moveStraight(distanceToTravel[0, 1]);
+                            SendToSerial(200);
+                        }
+                        else
+                        {
+                            SendToSerial(200);
+                            turnRight90();
+                            turnRight90();
+                            moveStraight(distanceToTravel[0, 1]);
+                            turnRight90();
+                            turnRight90();
+                            SendToSerial(200);
+                        }
+
+                        /*
                         // I'm assuming that the robot is facing towards the target when the event is detected!
                         //if Y co-ordinate is zero
                         if (distanceToTravel[0, 0] != 0 && distanceToTravel[0, 1] == 0)
                         {
                             Console.Out.WriteLine("in first!\n");
                             SendToSerial(200);
+                            turnRight90();
                             moveStraight(distanceToTravel[0, 0]);
                             SendToSerial(200);
                         }
@@ -597,23 +610,15 @@ namespace SerialPortTest
                             }
                             moveStraight(distanceToTravel[0, 1]);
                             SendToSerial(200);
-                        }
-                        //SendToSerial(200); // sing
-                        //trysleep(1000);
-                        //SendToSerial(203); // forward
-                        //trysleep(1000);
-                        //SendToSerial(207); // stop
-                        //trysleep(2000);
-                        //SendToSerial(204); // back
-                        //trysleep(1000);
-                        //SendToSerial(207); // stop
-                        //trysleep(2000);
-                        break;
+                        } 
+                        */
+
+                        targetQueue.removeTarget(targetNodeid);
+                        //break; // break out of thread...we stop
                     }
                 }
                 catch (Exception e) { }
                 finally { }
-                //robotThreadRunning = false;
             }
         }
 

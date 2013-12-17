@@ -55,12 +55,12 @@ namespace SerialPortTest
             if (dictionary.TryGetValue(nodeid, out value))
             {
 
-                Console.WriteLine("Found For key = ", nodeid, " value= {", value.ToString(), "}");
+                //Console.WriteLine("Found For key = "+ nodeid+ " value= {"+ value.toString()+ "}");
                 return value;
             }
             else
             {
-                Console.WriteLine("NOT Found For key = ", nodeid);
+                //Console.WriteLine("NOT Found For key = "+ nodeid);
                 return null;
             }
         }
@@ -155,7 +155,7 @@ namespace SerialPortTest
             }
         }
 
-        private static void printMatrix(double[,] matrix)
+        public static void printMatrix(double[,] matrix)
         {
             var rowCount = matrix.GetLength(0);
             var colCount = matrix.GetLength(1);
